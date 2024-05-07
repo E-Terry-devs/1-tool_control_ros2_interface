@@ -1,0 +1,179 @@
+/*********************************************************************
+** IO & PORT Definition
+**
+** Defines the different ports which are used at the MiniMACS6.
+** In addition, MAKROS are set up which are needed for the use of the
+** simulation by means of the User HMI.
+**
+**
+**	Kinematics Structure
+**
+**							-| Drive 1
+**						   /
+**						  /
+**						 /
+**		Drive 2|- - - - O
+**						 \
+**						  \
+**						   \
+**							-| Drive 3
+**
+*********************************************************************/
+
+// Axis module number - do not change
+#define WHEEL_DRIVE_2				0				// Internal amplifier - must be 0
+#define ACTUATING_DRIVE_2			2				// Internal amplifier - must be 2
+
+#define WHEEL_DRIVE_1				1				// Slave MiniMACS6
+#define ACTUATING_DRIVE_1			3				// Slave MiniMACS6
+#define WHEEL_DRIVE_3				4				// Slave MiniMACS6
+#define ACTUATING_DRIVE_3			5				// Slave MiniMACS6
+
+// Digital input for IO Mapping - Traverse 1
+#define DI_EMG_STOP_TRAV_1_NBR			(13 + 32*MIM6_DI_MODULE_TRAV_1)
+
+
+// Digital ouput for IO Mapping - Traverse 1
+#define DO_BREAK_ACT_DRIVE_1_NBR		(1 + 32*MIM6_DO_MODULE_TRAV_1)
+#define DO_BREAK_WD_DRIVE_1_NBR			(2 + 32*MIM6_DO_MODULE_TRAV_1)
+#define DO_LED_TRAV_1_NBR				(5 + 32*MIM6_DO_MODULE_TRAV_1)
+
+// Analog input for IO Mapping - Traverse 1
+#define AI_CNF_HOME_TRAV_1_NBR			(MIM6_AI1_MODULE_TRAV_1+1)
+#define AI_CNF_FRAME_TRAV_1_NBR			(MIM6_AI2_MODULE_TRAV_1+1)
+
+// Digital input for IO Mapping - Traverse 2
+#define DI_EMG_STOP_TRAV_2_NBR			(13 + 32*0)
+
+// Digital ouput for IO Mapping - Traverse 2
+#define DO_BREAK_ACT_DRIVE_2_NBR		(1 + 32*0)
+#define DO_BREAK_WD_DRIVE_2_NBR			(2 + 32*0)
+#define DO_LED_TRAV_2_NBR				(5 + 32*0)
+#define DO_MASTER_ENABLE_NBR			(8 + 32*0)
+
+// Analog input for IO Mapping - Traverse 2
+#define AI_CNF_HOME_TRAV_2_NBR			(1)
+#define AI_CNF_FRAME_TRAV_2_NBR			(2)
+
+// Digital input for IO Mapping - Traverse 3
+#define DI_EMG_STOP_TRAV_3_NBR			(13 + 32*MIM6_DI_MODULE_TRAV_3)
+#define DI_HMI_1_TRAV_1_NBR				(14 + 32*MIM6_DI_MODULE_TRAV_3)
+#define DI_HMI_2_TRAV_1_NBR				(15 + 32*MIM6_DI_MODULE_TRAV_3)
+#define DI_HMI_MODE_NBR				    (8 + 32*MIM6_DI_MODULE_TRAV_3)
+
+
+// Digital ouput for IO Mapping - Traverse 3
+#define DO_BREAK_ACT_DRIVE_3_NBR		(1 + 32*MIM6_DO_MODULE_TRAV_3)
+#define DO_BREAK_WD_DRIVE_3_NBR			(2 + 32*MIM6_DO_MODULE_TRAV_3)
+#define DO_LED_TRAV_3_NBR				(5 + 32*MIM6_DO_MODULE_TRAV_3)
+
+// Analog input for IO Mapping - Traverse 3
+#define AI_CNF_HOME_TRAV_3_NBR			(MIM6_AI1_MODULE_TRAV_3+1)
+#define AI_CNF_FRAME_TRAV_3_NBR			(MIM6_AI2_MODULE_TRAV_3+1)
+
+// Digital inputs for use in the applikaiton
+#define DI_EMG_STOP_TRAV_1				(DigInput(DI_EMG_STOP_TRAV_1_NBR))
+#define DI_EMG_STOP_TRAV_2				(DigInput(DI_EMG_STOP_TRAV_2_NBR))
+#define DI_EMG_STOP_TRAV_3				(DigInput(DI_EMG_STOP_TRAV_3_NBR))
+
+#define DI_HMI_1_TRAV_1					(DigInput(DI_HMI_1_TRAV_1_NBR))
+#define DI_HMI_2_TRAV_1					(DigInput(DI_HMI_2_TRAV_1_NBR))
+#define DI_HMI_MODE				    	(DigInput(DI_HMI_MODE_NBR))
+
+// Analog inputs for use in the applikaiton
+#define AI_CNF_HOME_TRAV_1				(AnalogInput(AI_CNF_HOME_TRAV_1_NBR))
+#define AI_CNF_FRAME_TRAV_1				(AnalogInput(AI_CNF_FRAME_TRAV_1_NBR))
+#define AI_CNF_HOME_TRAV_2				(AnalogInput(AI_CNF_HOME_TRAV_2_NBR))
+#define AI_CNF_FRAME_TRAV_2				(AnalogInput(AI_CNF_FRAME_TRAV_2_NBR))
+#define AI_CNF_HOME_TRAV_3				(AnalogInput(AI_CNF_HOME_TRAV_3_NBR))
+#define AI_CNF_FRAME_TRAV_3				(AnalogInput(AI_CNF_FRAME_TRAV_3_NBR))
+
+// Digital Output for use in the applikaiton
+#define DO_BREAK_ACT_DRIVE_1(s)			DigOutput(DO_BREAK_ACT_DRIVE_1_NBR,s)		//Break xx, Condition: 0 = OFF, 1 = ON
+#define DO_BREAK_ACT_DRIVE_2(s)			DigOutput(DO_BREAK_ACT_DRIVE_2_NBR,s)		//Break xx, Condition: 0 = OFF, 1 = ON
+#define DO_BREAK_ACT_DRIVE_3(s)			DigOutput(DO_BREAK_ACT_DRIVE_3_NBR,s)		//Break xx, Condition: 0 = OFF, 1 = ON
+
+#define DO_BREAK_WD_DRIVE_1(s)			DigOutput(DO_BREAK_WD_DRIVE_1_NBR,s)		//Break xx, Condition: 0 = OFF, 1 = ON
+#define DO_BREAK_WD_DRIVE_2(s)			DigOutput(DO_BREAK_WD_DRIVE_2_NBR,s)		//Break xx, Condition: 0 = OFF, 1 = ON
+#define DO_BREAK_WD_DRIVE_3(s)			DigOutput(DO_BREAK_WD_DRIVE_3_NBR,s)		//Break xx, Condition: 0 = OFF, 1 = ON
+
+#define DO_LED_TRAV_1(s)				DigOutput(DO_LED_TRAV_1_NBR,s)				//LED xx, Condition: 0 = OFF, 1 = ON
+#define DO_LED_TRAV_2(s)				DigOutput(DO_LED_TRAV_2_NBR,s)				//LED xx, Condition: 0 = OFF, 1 = ON
+#define DO_LED_TRAV_3(s)				DigOutput(DO_LED_TRAV_3_NBR,s)				//LED xx, Condition: 0 = OFF, 1 = ON
+
+#define DO_MASTER_ENABLE(s)				DigOutput(DO_MASTER_ENABLE_NBR,s)			//Master enable, Condition: 0 = OFF, 1 = ON
+
+
+/*************************** OLD Parameter - tbd delte from eTerry *****************************/
+
+
+
+#define DI_SLEEPMODE_NBR				999	//RC remote control - IO Port number			// Not used actual
+#define DI_EXTERNAL_INPUT_NBR			999	//RC remote control - IO Port number			// Not used actual
+#define DI_ERROR_RADIO_NBR				999	//RC remote control - IO Port number			// ToDO Not used actual DI_ERROR_RADIO is always 1
+#define DI_SET_CONST_SPEED_NBR			999	//RC remote control - IO Port number			// With semi auto mode, const speed is not used any more 19.08.2021
+
+#define DI_CONFIGURATION_1_NBR			1	//Sensor in central frame - IO Port number
+#define DI_CONFIGURATION_2_NBR			2	//Sensor in central frame - IO Port number
+#define DI_INVERT_MODE_NBR				3	//RC remote control - IO Port number
+#define DI_ROT_CENTRALPOINT_NBR			4	//RC remote control - IO Port number
+#define DI_SLOW_MODE_NBR				5	//RC remote control - IO Port number
+#define DI_DATA_LOGGING_NBR				7	//RC remote control - IO Port number
+#define DI_VEHICLE_ON_NBR				8	//RC remote control - IO Port number
+											//Digital Input 9 an 10 are use as an analog input
+#define DI_CURVE_DRIVE_NBR				11	//RC remote control - IO Port number
+#define DI_MANUAL_EBOX_1_NBR			12	//Button on the vehicle - IO Port number
+#define DI_MANUAL_EBOX_2_NBR			13	//Button on the vehicle - IO Port number
+#define DI_SEMI_AUTO_ON_NBR				16	//Button on the vehicle - IO Port number
+#define DI_SEMI_AUTO_CURVE_NBR			15	//Button on the vehicle - IO Port number
+
+
+// Digital Output for IO Mapping
+#define DO_APP_CONTROL_NBR				7	// Application control to disable Outputs while MotorOff - IO Port number
+
+// Analog Input for IO Mapping
+#define AI_JOYSTICK_BOOST_NBR			1	// RC remote control	-> DIGIN 9
+#define AI_JOYSTICK_STEERING_NBR		2	// RC remote control	-> DIGIN 10
+
+// Digital inputs for use in the applikaiton
+#define DI_SLEEPMODE				(DigInput(DI_SLEEPMODE_NBR) 		|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_SLEEPMODE)		//RC remote control
+#define DI_CURVE_DRIVE				(DigInput(DI_CURVE_DRIVE_NBR)	 	|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_CURVE_DRIVE)		//RC remote control
+#define DI_ROT_CENTRALPOINT			(DigInput(DI_ROT_CENTRALPOINT_NBR)	|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_ROT_CENTRALPOINT)	//RC remote control
+#define DI_SET_CONST_SPEED			(DigInput(DI_SET_CONST_SPEED_NBR) 	|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_SET_CONST_SPEED)	//RC remote control
+#define DI_EXTERNAL_INPUT			(DigInput(DI_EXTERNAL_INPUT_NBR) 	|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_EXTERNAL_INPUT)	//RC remote control
+#define DI_DATA_LOGGING				(DigInput(DI_DATA_LOGGING_NBR) 		|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_DATA_LOGGING)		//RC remote control
+#define DI_ERROR_RADIO				(1||DigInput(DI_ERROR_RADIO_NBR) 	|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_ERROR_RADIO || REMOTE_AI_ON)		//RC remote control		// ToDo Not used actual DI_ERROR_RADIO is always 1
+#define DI_VEHICLE_ON				(DigInput(DI_VEHICLE_ON_NBR) 		|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_DATA_LOGGING)		//RC remote control
+#define DI_INVERT_MODE				(DigInput(DI_INVERT_MODE_NBR) 		|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_INVERT_MODE)		//RC remote control
+#define DI_SLOW_MODE				(DigInput(DI_SLOW_MODE_NBR) 		|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_SLOW_MODE)		//RC remote control
+#define DI_SEMI_AUTO_ON				(DigInput(DI_SEMI_AUTO_ON_NBR) 		|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_SEMI_AUTO_ON)		//RC remote control
+#define DI_SEMI_AUTO_CURVE			(DigInput(DI_SEMI_AUTO_CURVE_NBR) 	|| USER_PARAM(USER_MONITOR_REMOTE)&REMOTE_SEMI_AUTO_CURVE)	//RC remote control
+
+#define DI_CONFIGURATION_1			(DigInput(DI_CONFIGURATION_1_NBR) 	|| USER_PARAM(USER_MONITOR_SENSOR)&SENS_CONFIGURATION_1)//Sensor in central frame
+#define DI_CONFIGURATION_2			(DigInput(DI_CONFIGURATION_2_NBR) 	|| USER_PARAM(USER_MONITOR_SENSOR)&SENS_CONFIGURATION_2)	//Sensor in central frame
+
+#define DI_MANUAL_EBOX_1			(DigInput(DI_MANUAL_EBOX_1_NBR)  || USER_PARAM(USER_MONITOR_SENSOR)&SENS_MANUAL_EBOX_1)	//Button on the vehicle
+#define DI_MANUAL_EBOX_2			(DigInput(DI_MANUAL_EBOX_2_NBR)  || USER_PARAM(USER_MONITOR_SENSOR)&SENS_MANUAL_EBOX_2)	//Button on the vehicle
+
+// Analog Input
+#define AI_JOYSTICK_BOOST			AnalogInput(AI_JOYSTICK_BOOST_NBR)		//RC remote control	-> boost
+#define AI_JOYSTICK_STEERING		AnalogInput(AI_JOYSTICK_STEERING_NBR)	//RC remote control	-> DIGIN 9
+
+
+#define AI_JOYSTICK_BOOST_UU			10000								// Value in master units CAM Curve
+#define AI_JOYSTICK_BOOST_INPUT_MIN		1244								// Minimum raw value from RC remote control
+#define AI_JOYSTICK_BOOST_INPUT_MAX		9722								// Maximum raw value from RC remote control
+#define AI_JOYSTICK_BOOST_UU_SWING		600									// Swing value in user units  +/- 50
+#define AI_JOYSTICK_BOOST_OFFSET		0									// The offset which is used as "dead time" when transferring the square function.
+
+#define AI_JOYSTICK_STEERING_INPUT_MIN	1030								// Minimum raw value from RC remote control
+#define AI_JOYSTICK_STEERING_INPUT_MAX	9586								// Maximum raw value from RC remote control
+#define AI_JOYSTICK_STEERING_UU			10000								// Value in master units CAM Curve
+#define AI_JOYSTICK_STEERING_UU_SWING	800									// Swing value in user units  +/- 50
+#define AI_JOYSTICK_STEERING_OFFSET		0									// The offset which is used as "dead time" when transferring the square function.
+
+#define AI_JOYSTICK_MASTER_SLAVE_FAKT	10									// Factor between master and slave by set analog input as master to slave (cam curve)
+
+// Digital Output
+
+#define DO_APP_CONTROL(s)				DigOutput(DO_APP_CONTROL_NBR,s)				//App control to disable Outputs while MotorOff, Condition: 0 = OFF, 1 = ON

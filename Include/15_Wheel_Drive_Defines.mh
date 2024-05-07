@@ -1,0 +1,100 @@
+/*********************************************************************
+** Wheel Drives Defines
+**
+** The port numbers of the inputs and outputs(Hall, Enc, Axis) are
+** defined in the include files "IO_Port_Defines.mh"
+*********************************************************************/
+
+/*********************************************************************
+** Drive Configuration
+*********************************************************************/
+
+// Encoder
+#define WHEEL_DRIVE_ENCRES 			4096				// Resolution of the encoder for position feed back in increments (quadcounts)
+
+//#define WHEEL_DRIVE_CURBREAKREACT	5000					// Maximal current allowed in mA
+#define WHEEL_DRIVE_MAX_RPM			1680			// Maximum velocity in RPM
+#define WHEEL_DRIVE_CURKPROP		500					// Proportional factor of current controller		//R = 0.284 Ohm L= 0.443 mH
+#define WHEEL_DRIVE_CURKINT			10						// Integral factor of current controller
+#define WHEEL_DRIVE_CURKILIM		0x7FFF					// Integral limit of current controller
+#define WHEEL_DRIVE_VELKPROP		12000					// Proportional factor of velocity controller	// Velocity control is not used
+#define WHEEL_DRIVE_VELKINT			10					// Integral factor of velocity controller		// Velocity control is not used
+#define WHEEL_DRIVE_VELKILIM		0x7FFF					// Integral limit of velocity controller		// Velocity control is not used
+
+
+
+// Axis Movement Parameter
+#define WHEEL_DRIVE_VELRES			1000					// Velocity resolution, Scaling used for the velocity and acceleration/deceleration commands
+#define WHEEL_DRIVE_RAMPTYPE		RAMPTYPE_JERKLIMITED	// Defines the ramptype
+#define WHEEL_DRIVE_RAMPMIN			1000						// Maximum acceleration
+#define WHEEL_DRIVE_JERKMIN			1000					// Minimum time (ms) required before reaching the maximum acceleration
+#define WHEEL_DRIVE_TRACKERR		0				// Disable Todo → conzept
+
+// Axis User Units
+#define	WHEEL_DRIVE_POSENCREV		1							// Number of revolutions of the motor
+#define	WHEEL_DRIVE_POSENCQC		WHEEL_DRIVE_ENCRES			// Number of quadcounts in POSENCREV revolutions
+#define	WHEEL_DRIVE_POSFACT_Z		42							// Number of revolutions of the input shaft
+#define	WHEEL_DRIVE_POSFACT_N		1							// Number of revolutions of the output shaft in POSFACT_Z revolutions of the input shaft
+#define	WHEEL_DRIVE_FEEDREV			1							// Number of revolutions of the gear box output shaft
+#define	WHEEL_DRIVE_FEEDDIST		MECH_WHEEL_DIAMETER*3.14	// Distance travelled (in user units) in FEEDREV revolutions of the gear box output shaft [mm]
+
+// Axis MACS control loop settings
+#define	WHEEL_DRIVE_KPROP			0
+#define	WHEEL_DRIVE_KINT			0
+#define	WHEEL_DRIVE_KDER			0
+#define	WHEEL_DRIVE_KILIM			0
+#define	WHEEL_DRIVE_KILIMTIME		0
+#define	WHEEL_DRIVE_BANDWIDTH		1000
+#define	WHEEL_DRIVE_FFVEL			1000
+#define	WHEEL_DRIVE_KFFAC			100
+#define	WHEEL_DRIVE_KFFDEC			0
+
+
+// Velocity settings
+#define WHEEL_DRIVE_MAX_VEL			((((double)WHEEL_DRIVE_MAX_RPM/(60*(double)WHEEL_DRIVE_POSFACT_Z))*(double)MECH_WHEEL_DIAMETER*3.14))	// Maximum velocity in mm/s
+
+/*********************************************************************
+** Application Configuration
+*********************************************************************/
+
+// DriveMode
+#define WHEEL_DRIVE_CURVE_DRIVE_FAKT		0.5								// Must be lower than 1. Faktor to reduce velocity
+#define WHEEL_DRIVE_TANK_DRIVE_FAKT			0.5								// Must be lower than 1. Faktor to reduce velocity
+#define WHEEL_DRIVE_ROT_WHEEL_FAKT			0.5								// Must be lower than 1. Faktor to reduce velocity
+#define WHEEL_DRIVE_SLOW_MODE_FAKT			2								// Boost / Fakt = Velcity
+
+// General acceleration
+#define WHEEL_DRIVE_ACC						100								// in percent 1/10 (xx.x% of max acc)
+#define WHEEL_DRIVE_DEC						250								// in percent 1/10 (xx.x% of max acc)
+
+#define WHEEL_DRIVE_ROT_WHEEL_ACC			100								// in percent 1/10 (xx.x% of max acc)
+#define WHEEL_DRIVE_ROT_WHEEL_DEC			100								// in percent 1/10 (xx.x% of max acc)
+
+// ManualMode
+#define WHEEL_DRIVE_MANUAL_VEL		50
+#define WHEEL_DRIVE_MANUAL_ACC		100
+#define WHEEL_DRIVE_MANUAL_DEC		300
+#define WHEEL_DRIVE_FOLD_VEL		50
+
+// Wheel Point
+#define WHEEL_DRIVE_ROT_WHEEL_SEMI_AUTO_VEL		250							// in percent 1/10 (xx.x% of max vel)
+#define WHEEL_DRIVE_ROT_WHEEL_DIR_1				-1
+#define WHEEL_DRIVE_ROT_WHEEL_DIR_2				1
+#define WHEEL_DRIVE_ROT_WHEEL_DIR_3				-1
+
+// Homing ActDrive
+#define WHEEL_DRIVE_HOMING_ACT_DIR_1	-1
+#define WHEEL_DRIVE_HOMING_ACT_DIR_2	1
+#define WHEEL_DRIVE_HOMING_ACT_DIR_3	-1
+
+#define WHEEL_DRIVE_HOMING_ACT_VEL				5					// in percent 1/10 (xx.x% of max vel)
+#define WHEEL_DRIVE_HOMING_ACT_ACC				100					// in percent 1/10 (xx.x% of max acc)
+#define WHEEL_DRIVE_HOMING_ACT_DEC				100				// in percent 1/10 (xx.x% of max acc)
+
+//gen 4
+#define WHEEL_DRIVE_HOMING_VEL_ZERO				100					// in percent 1/10 (xx.x% of max vel)
+#define WHEEL_DRIVE_HOMING_ACC_ZERO				100					// in percent 1/10 (xx.x% of max acc)
+#define WHEEL_DRIVE_HOMING_DEC_ZERO			    100				// in percent 1/10 (xx.x% of max acc)
+
+//Wheek Drive ROT_CENTRE MANUAL_VEL
+#define WHEEL_DRIVE_ROT_CENTRE_VEL_MANUAL				30					// in percent 1/10 (xx.x% of max vel)

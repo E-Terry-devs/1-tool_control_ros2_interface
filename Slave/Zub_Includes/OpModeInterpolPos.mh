@@ -1,0 +1,122 @@
+/*********************************************************************
+**
+**              CanOpen Operational Mode: InterpolPos
+**              -------------------------------------
+*/
+
+SmState DriveModeInterpolPos
+    {
+    SIG_ENTRY           = InterpolPos_Entry;
+    SIG_ENABLEOPERATION = InterpolPos_EnableOperation;
+
+    SmState Active
+        {
+        SIG_ENTRY           = InterpolPosActive_Entry;
+        SIG_EXIT            = InterpolPosActive_Exit;
+        SIG_ENABLEOPERATION = InterpolPosActive_EnableOperation;
+        }
+    }
+
+/*********************************************************************
+**
+**            Interpolated Position Mode State Functions
+**            ------------------------------------------
+*/
+
+long InterpolPos_Entry(long id, long signal, long event[], long data[])
+{
+    print("Axis ",id,": Enter state OperationEnabled - InterpolPosMode (Inactive)");
+
+    data[DATA_State] = STATE_M_INTERPOLPOS;
+
+    /*
+    ** Any time we enter this state, stop the motor and set the status bit
+    ** to "Inactive".
+    */
+
+    AxisStop(id);
+
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 0;
+
+    return(SmHandled);
+}
+
+long InterpolPos_EnableOperation(long id, long signal, long event[], long data[])
+{
+    /*
+    ** If the Op Mode has changed (i.e. we are no longer in InterpolPos Mode),
+    ** then let the superstate deal with it.
+    */
+
+
+    /*
+    ** If the Start bit is set, then transition into the Active state.  Otherwise,
+    ** just "handle" the event which will cause us to stay in the "Inactive" state.
+    */
+
+    if (event[EVENT_COMMAND] & ZBCOS_CMDM_IP_START) {
+        return(SmTrans(->Active));
+    }
+
+    return(SmHandled);
+}
+
+/*********************************************************************
+**
+**         Active Interpolated Position Mode State Functions
+**         -------------------------------------------------
+*/
+
+long InterpolPosActive_Entry(long id, long signal, long event[], long data[])
+{
+    print("Axis ",id,": Enter state OperationEnabled - InterpolPosMode (Active)");
+
+    data[DATA_State] = STATE_SM_INTERPOLACTIVE;
+
+    /*
+    ** Start the InterpolPos movement and set the status bit to "Active".
+    */
+
+    AXE_PARAM(id, SYNCTYPE) = 3;
+    // ZBCOS_IPM_SETCURVE_FUNCTION(id)     TBD
+    SyncDefOrigin(0, id, 0);
+    SyncCam(id, 0);
+    SyncCamStart(id, 0);
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 1;
+
+    return(SmHandled);
+}
+
+long InterpolPosActive_Exit(long id, long signal, long event[], long data[])
+{
+    /*
+    ** Always stop the motor and set the status bit to "Inactive" since we
+    ** don't know to which state we are going.
+    */
+
+    AxisStop(id);
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 0;
+
+    return(SmHandled);
+}
+
+long InterpolPosActive_EnableOperation(long id, long signal, long event[], long data[])
+{
+    /*
+    ** If the Op Mode has changed (i.e. we are no longer in InterpolPos Mode),
+    ** then let the superstate deal with it.
+    */
+
+
+    /*
+    ** If the Start bit is clear, then transition into the Inactive state.
+    ** Otherwise, just "handle" the event which will cause us to stay in the
+    ** "Active" state.
+    */
+
+    if (!(event[EVENT_COMMAND] & ZBCOS_CMDM_IP_START)) {   // not  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!???????????????????? correct so?
+        return(SmTrans(<-));
+    }
+
+    return(SmHandled);
+}

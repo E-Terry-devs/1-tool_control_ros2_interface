@@ -1,0 +1,498 @@
+[VARIABLES]
+
+WindowWidth  = 1140
+WindowHeight = 850
+WindowFlags  = 0x0000
+WindowTitle  = Can-Open State Machine
+OpFlags      = 0x0001
+
+PollInterval = 1000
+
+$BtnFont = Font,0x0000,(-12,0,0,0,600,0,0,0,0,0,0,0,0,"MS Shell Dlg 2")
+// Not use at the moment still implemented
+//$OpModes  = Table,0x0000,("*None"    , 0x00,"*Position",           0x01,"*Velocity",      0x03,"*Homing",          0x06,"*Appl 0",			  0xE0,"*Appl 1",	  0xE1,"*Interpolated",0x07,"*Synchronous",0xFE,"*Master",0xFD,"*Permanent",0xFC)
+$OpModes  = Table,0x0000,("*None"    , 0x00,"*Position",           0x01,"*Velocity",      0x03,"*Homing",          0x06,"*Appl 0",			  0xE0,"*Appl 1",	  0xE1)
+$Bit8Lbl  = Table,0x0000,("*  8:"    , 0x00,"*  8:",               0x01,"*  8:",          0x03,"*  8:",            0x06,"*  8:",              0x07,"*  8:",       0xFE,"*  8:",     0xFD,"*  8:",     0xFC,"*  8:",  0xE0,"*  8:",  0xE1,"*  8:",  0xE2)
+$Bit12Lbl = Table,0x0000,("*12:"     , 0x00,"*12: Setpoint Ack",   0x01,"*12: Speed",           0x03,"*12: Attained",    0x06,"*12: Interp. Active",0x07,"*12:",        0xFE,"*12:",      0xFD,"*12:",      0xFC,"*12:",   0xE0,"*12:",   0xE1,"*12:",   0xE2)
+$Bit13Lbl = Table,0x0000,("*13:"     , 0x00,"*13: Following Error",0x01,"*13:",           0x03,"*13: Homing Error",0x06,"*13:",               0x07,"*13:",        0xFE,"*13:",      0xFD,"*13:",      0xFC,"*13:",   0xE0,"*13:",   0xE1,"*13:",   0xE2)
+$Bit14Lbl = Table,0x0000,("*14: Power",0x00,"*14: Power",          0x01,"*14: Power",     0x03,"*14: Power",       0x06,"*14: Power",         0x07,"*14: Power",  0xFE,"*14: Power",0xFD,"*14: Power",0xFC,"*14:",   0xE0,"*14:",   0xE1,"*14:",   0xE2)
+$States   = Table,0x0000,("*Initial", 1,"*nu",2,"*NotReadySw", 3,"*SwitchOnDis", 4,"*ReadyTSw", 5,"*SwitchedOn",6,"*OpEnabled",7,"*QuickStact",8,"*Fault",9,"*FaultRe",10,"*nu",11,"*VeloRun",12,"*VeloHlt",13,"*InterPol",14,"*Intpact",15,"*PosHalt",16,\
+                          "*PosWaitSp",17,"*PosStarted",18,"*PosRdyRest",19,"*PosWaitTarg",20,"*PosSpWaiting",21,"*AppE0",22,"*AppE1",23,"*HomeReady",24,"*HomeHalt",25,"*HomeDone",26,"*HomeSearchSwitch",27,"*HomeSearchInd",28,"*HomePosInd",29,"*HomeError",30)
+
+$Ctrl = Controller,0x0000,(1,USB,5,50,0x0,921600,1)
+
+$Select  = Button,Controller,"*Select",  0, 15, 10,100,30,0x0100,BtnFont,Black,DlgGray,-,{Ctrl}
+$Connect = Button,Controller,"*Connect", 0,125, 10,100,30,0x0600,BtnFont,Black,DlgGray,-,{Ctrl}
+
+$SdoAxisCnt = SDO,0x0004,Ctrl,0x2209,5,0,0
+$Hide = Bit,-,0,0,5,5,0x0001,Black,Black,Black,SdoAxisCnt,-1,Hide,0    // A hack to get "Always 0".
+
+$TxtName = Text,"Controller:",0,245,16, 60,20,-1,15,0x0000
+$Name    = Message,Controller,0,310,15,120,20,-1,-,0x0000,-,{Ctrl,Black}
+$TxtAxis = Text,"Axis Count:",0,445,16, 60,20,-1,15,0x0000
+$AxisCnt = Message,Value,     0,510,15, 20,20,-1,-,0x0000,-,{SdoAxisCnt,0,-,0,Black}
+
+$TxtSlct = Text,"Select Mode:",   Mod1,   -220,3,120,40,1,15,0x0001 
+$TxtMode = Text,"Mode Of Op:",    Dsp1,   -220,0,120,40,1,15,0x0001
+$TxtSsta = Text,"State :",        Sst1,   -220,5,120,40,1,15,0x0001
+$TxtCmd  = Text,"Control Word:",  Cmd1,   -220,0,120,40,1,15,0x0001
+$TxtStat = Text,"Status Word:",   Stt1,   -220,5,120,40,1,15,0x0001
+
+$TxtTrg  	= Text,"Target Pos uu:", 		TrgPos1,-220,5,120,40,1,15,0x0001
+$TxtTrgVel  = Text,"Target Vel uu/s:", 		TrgVel1,-220,5,120,40,1,15,0x0001
+$TxtVel  	= Text,"Profile Vel uu/s:",   	PrfVel1,-220,5,120,40,1,15,0x0001
+$TxtAcc  	= Text,"Profile Acc uu/s²:",   	PrfAcc1,-220,5,120,40,1,15,0x0001
+$TxtDec  	= Text,"Profile Dec uu/s²:",   	PrfDec1,-220,5,120,40,1,15,0x0001
+$TxtMaxVel 	= Text,"Max. Vel uu/s:",		MaxVel1,-220,5,120,40,1,15,0x0001
+$TxtActPos  = Text,"Actual Pos uu:", 		ActPos1,-220,5,120,40,1,15,0x0001
+$TxtActVel  = Text,"Actual Vel uu/s:",  	ActVel1,-220,5,120,40,1,15,0x0001
+
+
+$TxtSlctSDO = Text,"0x606000+n",   	Mod1,   -130,3,100,40,1,15,0x0000
+$TxtModeSDO = Text,"0x606100+n",    Dsp1,   -130,0,100,40,1,15,0x0000
+
+$TxtCmdSDO  = Text,"0x604000+n",    Cmd1,   -130,0,100,40,1,15,0x0000
+$TxtStatSDO = Text,"0x604100+n",    Stt1,   -130,5,100,40,1,15,0x0000
+$TxtSstaSDO = Text,"0x220125+n",    Sst1,   -130,5,100,40,1,15,0x0000
+$TxtTrgSDO  = Text,"0x607A00+n", 	TrgPos1,-130,5,100,40,1,15,0x0000
+$TxtTrgVelSDO  = Text,"0x60FF00+n", TrgVel1,-130,5,100,40,1,15,0x0000
+$TxtVelSDO  = Text,"0x608100+n",   	PrfVel1,-130,5,100,40,1,15,0x0000
+$TxtAccSDO  = Text,"0x608300+n",   	PrfAcc1,-130,5,100,40,1,15,0x0000
+$TxtDecSDO  = Text,"0x608400+n",   	PrfDec1,-130,5,100,40,1,15,0x0000
+$TxtMaxVelSDO 	= Text,"0x607F00+n",MaxVel1,-130,5,100,40,1,15,0x0000
+$TxtActSDO  = Text,"0x606400+n", 	ActPos1,-130,5,100,40,1,15,0x0000
+$TxtActVelSDO  = Text,"0x606C+n",  	ActVel1,-130,5,100,40,1,15,0x0000
+
+// Axis 1
+// ------
+
+$Axis1 = Box,"*Axis 1",0,200,50,140,800,0x0000
+$Aok1  = Bit,Axis1,20,14,100,5,0x0007,Green,Red,DlgGray,SdoAxisCnt,-1,Hide,1
+
+$SdoModeSet1 = SDO,0x0004,Ctrl,0x6060,0,0,0
+$SdoModeGet1 = SDO,0x0003,Ctrl,0x6061,0,0,0    // Poll
+$SdoExecSet1 = SDO,0x0004,Ctrl,0x6040,0,0,0
+$SdoStatGet1 = SDO,0x0003,Ctrl,0x6041,0,0,0    // Poll
+$SdoSsttGet1 = SDO,0x0003,Ctrl,0x2201,25,0,0   // Poll
+
+$SdoTrg1 	= SDO,0x0004,Ctrl,0x607A,0,0,0
+$SdoTrgVel1 = SDO,0x0004,Ctrl,0x60FF,0,0,0
+$SdoVel1 	= SDO,0x0004,Ctrl,0x6081,0,0,0
+$SdoAcc1 	= SDO,0x0004,Ctrl,0x6083,0,0,0
+$SdoDec1 	= SDO,0x0004,Ctrl,0x6084,0,0,0
+$SdoMaxVel1 = SDO,0x0004,Ctrl,0x607F,0,0,0
+$SdoAct1 	= SDO,0x0003,Ctrl,0x6064,0,0,0   	// Poll
+$SdoActVel1 = SDO,0x0003,Ctrl,0x606C,0,0,0  	// Poll
+
+$Mod1 = List,Lookup,Axis1,20,20,100,250,0x0006,Aok1,{OpModes,SdoModeSet1}
+$Dsp1 = Message,Lookup,Mod1,0,30,100,20,0,-,0x0003,Aok1,{OpModes,SdoModeGet1}
+$Sst1 = Message,Lookup,Dsp1,0,30,100,20,0,-,0x0003,Aok1,{States,SdoSsttGet1}
+$Cmd1 = Value,"*",            Sst1,  0,25,0x0100,SdoExecSet1,1,0,0,Aok1
+$Dis1 = Button,Set,"*Disable voltage", Cmd1,  0,30,100,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x00,0}
+$Rdy1 = Button,Set,"*Shutdown",        Dis1,  0,20,100,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x06,0}
+$Swo1 = Button,Set,"*Switch on",       Rdy1,  0,20,100,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x07,0}
+$Eop1 = Button,Set,"*Enable Operation",Swo1,  0,20,100,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x0F,0}
+$Qsp1 = Button,Set,"*Quick stop",      Eop1,  0,20,100,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x02,0}
+$Clr1 = Button,Set,"*Fault reset",     Qsp1,  0,20,100,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x80,0}
+$Str1 = Button,Set,"*Start",  Clr1,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x1F,0}
+$Stp1 = Button,Set,"*Stop ",  Str1, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x0F,0}
+$Nps1 = Button,Set,"*Halt ",  Str1,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x10F,0}
+$Npr1 = Button,Set,"*NoHlt",  Nps1, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok1,{SdoExecSet1,0x0F,0}
+$Stt1 = Value,"*",            Nps1,  0,25,0x0201,SdoStatGet1,1,0,0,Aok1
+
+
+$Sod1 = Bit,Stt1,0,35,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet1,0x0040,Aok1,0x0040    // x1xx xxxx
+$Rts1 = Bit,Sod1,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet1,0x007F,Aok1,0x0021    // x010 0001
+$Son1 = Bit,Rts1,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet1,0x007F,Aok1,0x0023    // x010 0011
+$Ope1 = Bit,Son1,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet1,0x007F,Aok1,0x0027    // x010 0111
+$Flt1 = Bit,Ope1,0,15,10,10,0x0003,  Red,Gray,DlgGray,SdoStatGet1,0x0078,Aok1,0x0028    // x010 1xxx
+$Qst1 = Bit,Flt1,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet1,0x007F,Aok1,0x0007    // x000 0111
+$Vlt1 = Bit,Qst1,0,25,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet1,0x0010,Aok1
+$Op81 = Bit,Vlt1,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet1,0x0100,Aok1
+$Trg1 = Bit,Op81,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet1,0x0400,Aok1
+$O121 = Bit,Trg1,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet1,0x1000,Aok1
+$O131 = Bit,O121,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet1,0x2000,Aok1
+$O141 = Bit,O131,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet1,0x4000,Aok1
+$Zer1 = Bit,O141,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet1,0x8000,Aok1
+$St11 = Text,"SwitchOnDisabled",Sod1,13,-4,100,15,-1,15,0x0000,Black,Aok1
+$St21 = Text,"ReadyToSwitchOn", Rts1,13,-4,100,15,-1,15,0x0000,Black,Aok1
+$St31 = Text,"SwitchedOn",      Son1,13,-4,100,15,-1,15,0x0000,Black,Aok1
+$St41 = Text,"OperationEnabled",Ope1,13,-4,100,15,-1,15,0x0000,Black,Aok1
+$St51 = Text,"Fault",           Flt1,13,-4,100,15,-1,15,0x0000,Black,Aok1
+$St61 = Text,"QuickStop",       Qst1,13,-4,100,15,-1,15,0x0000,Black,Aok1
+$Lb11 = Text,"  4: Voltage",    Vlt1,15,-4,100,15,-1,15,0x0000,Black,Aok1
+$Lb21 = Message,Lookup,         Op81,13,-3,100,15,-1,-,0x0000,Aok1,{Bit8Lbl,SdoModeGet1}
+$Lb31 = Text,"10: Target",      Trg1,15,-4,100,15,-1,15,0x0000,Black,Aok1
+$Lb21 = Message,Lookup,         O121,13,-3,100,15,-1,-,0x0000,Aok1,{Bit12Lbl,SdoModeGet1}
+$Lb21 = Message,Lookup,         O131,13,-3,100,15,-1,-,0x0000,Aok1,{Bit13Lbl,SdoModeGet1}
+$Lb21 = Message,Lookup,         O141,13,-3,100,15,-1,-,0x0000,Aok1,{Bit14Lbl,SdoModeGet1}
+$Lb71 = Text,"15: Stopped",     Zer1,15,-4,100,15,-1,15,0x0000,Black,Aok1
+
+$TrgPos1 = Value,"*", Zer1,     0, 20,0x0100,SdoTrg1,0,0,0,Aok1
+$TrgVel1 = Value,"*", TrgPos1,  0, 30,0x0100,SdoTrgVel1,0,0,0,Aok1
+$PrfVel1 = Value,"*", TrgVel1,  0, 30,0x0100,SdoVel1,0,0,0,Aok1
+$PrfAcc1 = Value,"*", PrfVel1,  0, 30,0x0100,SdoAcc1,0,0,0,Aok1
+$PrfDec1 = Value,"*", PrfAcc1,  0, 30,0x0100,SdoDec1,0,0,0,Aok1	
+$MaxVel1 = Value,"*", PrfDec1,  0, 30,0x0100,SdoMaxVel1,0,0,0,Aok1	
+$ActPos1 = Value,"*", MaxVel1,  0, 35,0x0201,SdoAct1,0,0,0,Aok1    // Poll
+$ActVel1 = Value,"*", ActPos1,  0, 30,0x0201,SdoActVel1,0,0,0,Aok1    // Poll
+
+//--------------------------------------------------------------------------------------------
+
+$Axis2 = Box,"*Axis 2",Axis1,150,0,140,800,0x0000
+$Aok2  = Bit,Axis2,20,14,100,5,0x0007,Green,Red,DlgGray,SdoAxisCnt,-1,Hide,2
+
+$SdoModeSet2 = SDO,0x0004,Ctrl,0x6860,0,0,0
+$SdoModeGet2 = SDO,0x0003,Ctrl,0x6861,0,0,0    // Poll
+$SdoExecSet2 = SDO,0x0004,Ctrl,0x6840,0,0,0
+$SdoStatGet2 = SDO,0x0003,Ctrl,0x6841,0,0,0    // Poll
+$SdoSsttGet2 = SDO,0x0003,Ctrl,0x2201,26,0,0    // Poll
+
+$SdoTrg2 = SDO,0x0004,Ctrl,0x687A,0,0,0
+$SdoTrgVel2 = SDO,0x0004,Ctrl,0x68FF,0,0,0
+$SdoVel2 = SDO,0x0004,Ctrl,0x6881,0,0,0
+$SdoAcc2 = SDO,0x0004,Ctrl,0x6883,0,0,0
+$SdoDec2 = SDO,0x0004,Ctrl,0x6884,0,0,0
+$SdoMaxVel2 = SDO,0x0004,Ctrl,0x687F,0,0,0
+$SdoAct2 = SDO,0x0003,Ctrl,0x6864,0,0,0    // Poll
+$SdoActVel2 = SDO,0x0003,Ctrl,0x686C,0,0,0    // Poll
+
+$Mod2 = List,Lookup,Axis2,20,20,100,250,0x0006,Aok2,{OpModes,SdoModeSet2}
+$Dsp2 = Message,Lookup,Mod2,0,30,100,20,0,-,0x0003,Aok2,{OpModes,SdoModeGet2}
+$Sst2 = Message,Lookup,Dsp2,0,30,100,20,0,-,0x0003,Aok2,{States,SdoSsttGet2}
+$Cmd2 = Value,"*",            Sst2,  0,25,0x0100,SdoExecSet2,1,0,0,Aok2
+$Dis2 = Button,Set,"*Disable voltage", Cmd2,  0,30,100,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x00,0}
+$Rdy2 = Button,Set,"*Shutdown",        Dis2,  0,20,100,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x06,0}
+$Swo2 = Button,Set,"*Switch on",       Rdy2,  0,20,100,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x07,0}
+$Eop2 = Button,Set,"*Enable Operation",Swo2,  0,20,100,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x0F,0}
+$Qsp2 = Button,Set,"*Quick stop",      Eop2,  0,20,100,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x02,0}
+$Clr2 = Button,Set,"*Fault reset",     Qsp2,  0,20,100,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x80,0}
+$Str2 = Button,Set,"*Start",  Clr2,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x1F,0}
+$Stp2 = Button,Set,"*Stop ",  Str2, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x0F,0}
+$Nps2 = Button,Set,"*Halt ",  Str2,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x10F,0}
+$Npr2 = Button,Set,"*NoHlt",  Nps2, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok2,{SdoExecSet2,0x0F,0}
+$Stt2 = Value,"*",            Nps2,  0,25,0x0201,SdoStatGet2,1,0,0,Aok2
+
+$Sod2 = Bit,Stt2,0,35,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet2,0x0040,Aok2,0x0040    // x1xx xxxx
+$Rts2 = Bit,Sod2,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet2,0x007F,Aok2,0x0021    // x010 0001
+$Son2 = Bit,Rts2,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet2,0x007F,Aok2,0x0023    // x010 0011
+$Ope2 = Bit,Son2,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet2,0x007F,Aok2,0x0027    // x010 0111
+$Flt2 = Bit,Ope2,0,15,10,10,0x0003,  Red,Gray,DlgGray,SdoStatGet2,0x0078,Aok2,0x0028    // x010 1xxx
+$Qst2 = Bit,Flt2,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet2,0x007F,Aok2,0x0007    // x000 0111
+$Vlt2 = Bit,Qst2,0,25,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet2,0x0010,Aok2
+$Op82 = Bit,Vlt2,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet2,0x0100,Aok2
+$Trg2 = Bit,Op82,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet2,0x0400,Aok2
+$O122 = Bit,Trg2,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet2,0x1000,Aok2
+$O132 = Bit,O122,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet2,0x2000,Aok2
+$O142 = Bit,O132,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet2,0x4000,Aok2
+$Zer2 = Bit,O142,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet2,0x8000,Aok2
+$St12 = Text,"SwitchOnDisabled",Sod2,13,-4,100,15,-1,15,0x0000,Black,Aok2
+$St22 = Text,"ReadyToSwitchOn", Rts2,13,-4,100,15,-1,15,0x0000,Black,Aok2
+$St32 = Text,"SwitchedOn",      Son2,13,-4,100,15,-1,15,0x0000,Black,Aok2
+$St42 = Text,"OperationEnabled",Ope2,13,-4,100,15,-1,15,0x0000,Black,Aok2
+$St52 = Text,"Fault",           Flt2,13,-4,100,15,-1,15,0x0000,Black,Aok2
+$St62 = Text,"QuickStop",       Qst2,13,-4,100,15,-1,15,0x0000,Black,Aok2
+$Lb12 = Text,"  4: Voltage",    Vlt2,15,-4,100,15,-1,15,0x0000,Black,Aok2
+$Lb22 = Message,Lookup,         Op82,13,-3,100,15,-1,-,0x0000,Aok2,{Bit8Lbl,SdoModeGet2}
+$Lb32 = Text,"10: Target",      Trg2,15,-4,100,15,-1,15,0x0000,Black,Aok2
+$Lb22 = Message,Lookup,         O122,13,-3,100,15,-1,-,0x0000,Aok2,{Bit12Lbl,SdoModeGet2}
+$Lb22 = Message,Lookup,         O132,13,-3,100,15,-1,-,0x0000,Aok2,{Bit13Lbl,SdoModeGet2}
+$Lb22 = Message,Lookup,         O142,13,-3,100,15,-1,-,0x0000,Aok2,{Bit14Lbl,SdoModeGet2}
+$Lb72 = Text,"15: Stopped",     Zer2,15,-4,100,15,-1,15,0x0000,Black,Aok2
+
+$TrgPos2 = Value,"*", Zer2,    -4, 20,0x0100,SdoTrg2,0,0,0,Aok2
+$TrgVel2 = Value,"*", TrgPos2,  0, 30,0x0100,SdoTrgVel2,0,0,0,Aok2
+$PrfVel2 = Value,"*", TrgVel2,  0, 30,0x0100,SdoVel2,0,0,0,Aok2
+$PrfAcc2 = Value,"*", PrfVel2,  0, 30,0x0100,SdoAcc2,0,0,0,Aok2
+$PrfDec2 = Value,"*", PrfAcc2,  0, 30,0x0100,SdoDec2,0,0,0,Aok2
+$MaxVel2 = Value,"*", PrfDec2,  0, 30,0x0100,SdoMaxVel2,0,0,0,Aok2	
+$ActPos2 = Value,"*", MaxVel2,  0, 35,0x0201,SdoAct2,0,0,0,Aok2    // Poll
+$ActVel2 = Value,"*", ActPos2,  0, 30,0x0201,SdoActVel2,0,0,0,Aok2    // Poll
+
+//--------------------------------------------------------------------------------------------
+
+$Axis3 = Box,"*Axis 3",Axis2,150,0,140,800,0x0000
+$Aok3  = Bit,Axis3,20,14,100,5,0x0007,Green,Red,DlgGray,SdoAxisCnt,-1,Hide,3
+
+$SdoModeSet3 = SDO,0x0004,Ctrl,0x7060,0,0,0
+$SdoModeGet3 = SDO,0x0003,Ctrl,0x7061,0,0,0    // Poll
+$SdoExecSet3 = SDO,0x0004,Ctrl,0x7040,0,0,0
+$SdoStatGet3 = SDO,0x0003,Ctrl,0x7041,0,0,0    // Poll
+$SdoSsttGet3 = SDO,0x0003,Ctrl,0x2201,27,0,0    // Poll
+
+$SdoTrg3 = SDO,0x0004,Ctrl,0x707A,0,0,0
+$SdoTrgVel3 = SDO,0x0004,Ctrl,0x70FF,0,0,0
+$SdoVel3 = SDO,0x0004,Ctrl,0x7081,0,0,0
+$SdoAcc3 = SDO,0x0004,Ctrl,0x7083,0,0,0
+$SdoDec3 = SDO,0x0004,Ctrl,0x7084,0,0,0
+$SdoMaxVel3 = SDO,0x0004,Ctrl,0x707F,0,0,0
+$SdoAct3 = SDO,0x0003,Ctrl,0x7064,0,0,0    // Poll
+$SdoActVel3 = SDO,0x0003,Ctrl,0x706C,0,0,0    // Poll
+
+$Mod3 = List,Lookup,Axis3,20,20,100,250,0x0006,Aok3,{OpModes,SdoModeSet3}
+$Dsp3 = Message,Lookup,Mod3,0,30,100,20,0,-,0x0003,Aok3,{OpModes,SdoModeGet3}
+$Sst3 = Message,Lookup,Dsp3,0,30,100,20,0,-,0x0003,Aok3,{States,SdoSsttGet3}
+$Cmd3 = Value,"*",            Sst3,  0,25,0x0100,SdoExecSet3,1,0,0,Aok3
+$Dis3 = Button,Set,"*Disable voltage", Cmd3,  0,30,100,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x00,0}
+$Rdy3 = Button,Set,"*Shutdown",        Dis3,  0,20,100,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x06,0}
+$Swo3 = Button,Set,"*Switch on",       Rdy3,  0,20,100,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x07,0}
+$Eop3 = Button,Set,"*Enable Operation",Swo3,  0,20,100,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x0F,0}
+$Qsp3 = Button,Set,"*Quick stop",      Eop3,  0,20,100,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x02,0}
+$Clr3 = Button,Set,"*Fault reset",     Qsp3,  0,20,100,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x80,0}
+$Str3 = Button,Set,"*Start",  Clr3,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x1F,0}
+$Stp3 = Button,Set,"*Stop ",  Str3, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x0F,0}
+$Nps3 = Button,Set,"*Halt ",  Str3,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x10F,0}
+$Npr3 = Button,Set,"*NoHlt",  Nps3, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok3,{SdoExecSet3,0x0F,0}
+$Stt3 = Value,"*",            Nps3,  0,25,0x0201,SdoStatGet3,1,0,0,Aok3
+
+$Sod3 = Bit,Stt3,0,35,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet3,0x0040,Aok3,0x0040    // x1xx xxxx
+$Rts3 = Bit,Sod3,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet3,0x007F,Aok3,0x0021    // x010 0001
+$Son3 = Bit,Rts3,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet3,0x007F,Aok3,0x0023    // x010 0011
+$Ope3 = Bit,Son3,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet3,0x007F,Aok3,0x0027    // x010 0111
+$Flt3 = Bit,Ope3,0,15,10,10,0x0003,  Red,Gray,DlgGray,SdoStatGet3,0x0078,Aok3,0x0028    // x010 1xxx
+$Qst3 = Bit,Flt3,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet3,0x007F,Aok3,0x0007    // x000 0111
+$Vlt3 = Bit,Qst3,0,25,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet3,0x0010,Aok3
+$Op83 = Bit,Vlt3,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet3,0x0100,Aok3
+$Trg3 = Bit,Op83,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet3,0x0400,Aok3
+$O123 = Bit,Trg3,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet3,0x1000,Aok3
+$O133 = Bit,O123,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet3,0x2000,Aok3
+$O143 = Bit,O133,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet3,0x4000,Aok3
+$Zer3 = Bit,O143,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet3,0x8000,Aok3
+$St13 = Text,"SwitchOnDisabled",Sod3,13,-4,100,15,-1,15,0x0000,Black,Aok3
+$St23 = Text,"ReadyToSwitchOn", Rts3,13,-4,100,15,-1,15,0x0000,Black,Aok3
+$St33 = Text,"SwitchedOn",      Son3,13,-4,100,15,-1,15,0x0000,Black,Aok3
+$St43 = Text,"OperationEnabled",Ope3,13,-4,100,15,-1,15,0x0000,Black,Aok3
+$St53 = Text,"Fault",           Flt3,13,-4,100,15,-1,15,0x0000,Black,Aok3
+$St63 = Text,"QuickStop",       Qst3,13,-4,100,15,-1,15,0x0000,Black,Aok3
+$Lb13 = Text,"  4: Voltage",    Vlt3,15,-4,100,15,-1,15,0x0000,Black,Aok3
+$Lb23 = Message,Lookup,         Op83,13,-3,100,15,-1,-,0x0000,Aok3,{Bit8Lbl,SdoModeGet3}
+$Lb33 = Text,"10: Target",      Trg3,15,-4,100,15,-1,15,0x0000,Black,Aok3
+$Lb23 = Message,Lookup,         O123,13,-3,100,15,-1,-,0x0000,Aok3,{Bit12Lbl,SdoModeGet3}
+$Lb23 = Message,Lookup,         O133,13,-3,100,15,-1,-,0x0000,Aok3,{Bit13Lbl,SdoModeGet3}
+$Lb23 = Message,Lookup,         O143,13,-3,100,15,-1,-,0x0000,Aok3,{Bit14Lbl,SdoModeGet3}
+$Lb73 = Text,"15: Stopped",     Zer3,15,-4,100,15,-1,15,0x0000,Black,Aok3
+
+$TrgPos3 = Value,"*", Zer3,    -4, 20,0x0100,SdoTrg3,0,0,0,Aok3
+$TrgVel3 = Value,"*", TrgPos3,  0, 30,0x0100,SdoTrgVel3,0,0,0,Aok3
+$PrfVel3 = Value,"*", TrgVel3,  0, 30,0x0100,SdoVel3,0,0,0,Aok3
+$PrfAcc3 = Value,"*", PrfVel3,  0, 30,0x0100,SdoAcc3,0,0,0,Aok3
+$PrfDec3 = Value,"*", PrfAcc3,  0, 30,0x0100,SdoDec3,0,0,0,Aok3
+$MaxVel3 = Value,"*", PrfDec3,  0, 30,0x0100,SdoMaxVel3,0,0,0,Aok3	
+$ActPos3 = Value,"*", MaxVel3,  0, 35,0x0201,SdoAct3,0,0,0,Aok3    // Poll
+$ActVel3 = Value,"*", ActPos3,  0, 30,0x0201,SdoActVel3,0,0,0,Aok3    // Poll
+
+//--------------------------------------------------------------------------------------------
+
+$Axis4 = Box,"*Axis 4",Axis3,150,0,140,800,0x0000
+$Aok4  = Bit,Axis4,20,14,100,5,0x0007,Green,Red,DlgGray,SdoAxisCnt,-1,Hide,4
+
+$SdoModeSet4 = SDO,0x0004,Ctrl,0x7860,0,0,0
+$SdoModeGet4 = SDO,0x0003,Ctrl,0x7861,0,0,0    // Poll
+$SdoExecSet4 = SDO,0x0004,Ctrl,0x7840,0,0,0
+$SdoStatGet4 = SDO,0x0003,Ctrl,0x7841,0,0,0    // Poll
+$SdoSsttGet4 = SDO,0x0003,Ctrl,0x2201,28,0,0    // Poll
+
+$SdoTrg4 = SDO,0x0004,Ctrl,0x787A,0,0,0
+$SdoTrgVel4 = SDO,0x0004,Ctrl,0x78FF,0,0,0
+$SdoVel4 = SDO,0x0004,Ctrl,0x7881,0,0,0
+$SdoAcc4 = SDO,0x0004,Ctrl,0x7883,0,0,0
+$SdoDec4 = SDO,0x0004,Ctrl,0x7884,0,0,0
+$SdoMaxVel4 = SDO,0x0004,Ctrl,0x787F,0,0,0
+$SdoAct4 = SDO,0x0003,Ctrl,0x7864,0,0,0    // Poll
+$SdoActVel4 = SDO,0x0003,Ctrl,0x786C,0,0,0    // Poll
+
+$Mod4 = List,Lookup,Axis4,20,20,100,250,0x0006,Aok4,{OpModes,SdoModeSet4}
+$Dsp4 = Message,Lookup,Mod4,0,30,100,20,0,-,0x0003,Aok4,{OpModes,SdoModeGet4}
+$Sst4 = Message,Lookup,Dsp4,0,30,100,20,0,-,0x0003,Aok4,{States,SdoSsttGet4}
+$Cmd4 = Value,"*",            Sst4,  0,25,0x0100,SdoExecSet4,1,0,0,Aok4
+$Dis4 = Button,Set,"*Disable voltage", Cmd4,  0,30,100,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x00,0}
+$Rdy4 = Button,Set,"*Shutdown",        Dis4,  0,20,100,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x06,0}
+$Swo4 = Button,Set,"*Switch on",       Rdy4,  0,20,100,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x07,0}
+$Eop4 = Button,Set,"*Enable Operation",Swo4,  0,20,100,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x0F,0}
+$Qsp4 = Button,Set,"*Quick stop",      Eop4,  0,20,100,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x02,0}
+$Clr4 = Button,Set,"*Fault reset",     Qsp4,  0,20,100,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x80,0}
+$Str4 = Button,Set,"*Start",  Clr4,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x1F,0}
+$Stp4 = Button,Set,"*Stop ",  Str4, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x0F,0}
+$Nps4 = Button,Set,"*Halt ",  Str4,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x10F,0}
+$Npr4 = Button,Set,"*NoHlt",  Nps4, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok4,{SdoExecSet4,0x0F,0}
+$Stt4 = Value,"*",            Nps4,  0,25,0x0201,SdoStatGet4,1,0,0,Aok4
+
+$Sod4 = Bit,Stt4,0,35,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet4,0x0040,Aok4,0x0040    // x1xx xxxx
+$Rts4 = Bit,Sod4,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet4,0x007F,Aok4,0x0021    // x010 0001
+$Son4 = Bit,Rts4,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet4,0x007F,Aok4,0x0023    // x010 0011
+$Ope4 = Bit,Son4,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet4,0x007F,Aok4,0x0027    // x010 0111
+$Flt4 = Bit,Ope4,0,15,10,10,0x0003,  Red,Gray,DlgGray,SdoStatGet4,0x0078,Aok4,0x0028    // x010 1xxx
+$Qst4 = Bit,Flt4,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet4,0x007F,Aok4,0x0007    // x000 0111
+$Vlt4 = Bit,Qst4,0,25,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet4,0x0010,Aok4
+$Op84 = Bit,Vlt4,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet4,0x0100,Aok4
+$Trg4 = Bit,Op84,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet4,0x0400,Aok4
+$O124 = Bit,Trg4,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet4,0x1000,Aok4
+$O134 = Bit,O124,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet4,0x2000,Aok4
+$O144 = Bit,O134,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet4,0x4000,Aok4
+$Zer4 = Bit,O144,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet4,0x8000,Aok4
+$St14 = Text,"SwitchOnDisabled",Sod4,13,-4,100,15,-1,15,0x0000,Black,Aok4
+$St24 = Text,"ReadyToSwitchOn", Rts4,13,-4,100,15,-1,15,0x0000,Black,Aok4
+$St34 = Text,"SwitchedOn",      Son4,13,-4,100,15,-1,15,0x0000,Black,Aok4
+$St44 = Text,"OperationEnabled",Ope4,13,-4,100,15,-1,15,0x0000,Black,Aok4
+$St54 = Text,"Fault",           Flt4,13,-4,100,15,-1,15,0x0000,Black,Aok4
+$St64 = Text,"QuickStop",       Qst4,13,-4,100,15,-1,15,0x0000,Black,Aok4
+$Lb14 = Text,"  4: Voltage",    Vlt4,15,-4,100,15,-1,15,0x0000,Black,Aok4
+$Lb24 = Message,Lookup,         Op84,13,-3,100,15,-1,-,0x0000,Aok4,{Bit8Lbl,SdoModeGet4}
+$Lb34 = Text,"10: Target",      Trg4,15,-4,100,15,-1,15,0x0000,Black,Aok4
+$Lb24 = Message,Lookup,         O124,13,-3,100,15,-1,-,0x0000,Aok4,{Bit12Lbl,SdoModeGet4}
+$Lb24 = Message,Lookup,         O134,13,-3,100,15,-1,-,0x0000,Aok4,{Bit13Lbl,SdoModeGet4}
+$Lb24 = Message,Lookup,         O144,13,-3,100,15,-1,-,0x0000,Aok4,{Bit14Lbl,SdoModeGet4}
+$Lb74 = Text,"15: Stopped",     Zer4,15,-4,100,15,-1,15,0x0000,Black,Aok4
+
+$TrgPos4 = Value,"*", Zer4,    -4, 20,0x0100,SdoTrg4,0,0,0,Aok4
+$TrgVel4 = Value,"*", TrgPos4,  0, 30,0x0100,SdoTrgVel4,0,0,0,Aok4
+$PrfVel4 = Value,"*", TrgVel4,  0, 30,0x0100,SdoVel4,0,0,0,Aok4
+$PrfAcc4 = Value,"*", PrfVel4,  0, 30,0x0100,SdoAcc4,0,0,0,Aok4
+$PrfDec4 = Value,"*", PrfAcc4,  0, 30,0x0100,SdoDec4,0,0,0,Aok4
+$MaxVel4 = Value,"*", PrfDec4,  0, 30,0x0100,SdoMaxVel4,0,0,0,Aok4	
+$ActPos4 = Value,"*", MaxVel4,  0, 35,0x0201,SdoAct4,0,0,0,Aok4    // Poll
+$ActVel4 = Value,"*", ActPos4,  0, 30,0x0201,SdoActVel4,0,0,0,Aok4    // Poll
+
+//--------------------------------------------------------------------------------------------
+
+$Axis5 = Box,"*Axis 5",Axis4,150,0,140,800,0x0000
+$Aok5  = Bit,Axis5,20,14,100,5,0x0007,Green,Red,DlgGray,SdoAxisCnt,-1,Hide,5
+
+$SdoModeSet5 = SDO,0x0004,Ctrl,0x8060,0,0,0
+$SdoModeGet5 = SDO,0x0003,Ctrl,0x8061,0,0,0    // Poll
+$SdoExecSet5 = SDO,0x0004,Ctrl,0x8040,0,0,0
+$SdoStatGet5 = SDO,0x0003,Ctrl,0x8041,0,0,0    // Poll
+$SdoSsttGet5 = SDO,0x0003,Ctrl,0x2201,29,0,0    // Poll
+
+$SdoTrg5 = SDO,0x0004,Ctrl,0x807A,0,0,0
+$SdoTrgVel5 = SDO,0x0004,Ctrl,0x80FF,0,0,0
+$SdoVel5 = SDO,0x0004,Ctrl,0x8081,0,0,0
+$SdoAcc5 = SDO,0x0004,Ctrl,0x8083,0,0,0
+$SdoDec5 = SDO,0x0004,Ctrl,0x8084,0,0,0
+$SdoMaxVel5 = SDO,0x0004,Ctrl,0x807F,0,0,0
+$SdoAct5 = SDO,0x0003,Ctrl,0x8064,0,0,0    // Poll
+$SdoActVel5 = SDO,0x0003,Ctrl,0x806C,0,0,0    // Poll
+
+$Mod5 = List,Lookup,Axis5,20,20,100,250,0x0006,Aok5,{OpModes,SdoModeSet5}
+$Dsp5 = Message,Lookup,Mod5,0,30,100,20,0,-,0x0003,Aok5,{OpModes,SdoModeGet5}
+$Sst5 = Message,Lookup,Dsp5,0,30,100,20,0,-,0x0003,Aok5,{States,SdoSsttGet5}
+$Cmd5 = Value,"*",            Sst5,  0,25,0x0100,SdoExecSet5,1,0,0,Aok5
+$Dis5 = Button,Set,"*Disable voltage", Cmd5,  0,30,100,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x00,0}
+$Rdy5 = Button,Set,"*Shutdown",        Dis5,  0,20,100,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x06,0}
+$Swo5 = Button,Set,"*Switch on",       Rdy5,  0,20,100,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x07,0}
+$Eop5 = Button,Set,"*Enable Operation",Swo5,  0,20,100,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x0F,0}
+$Qsp5 = Button,Set,"*Quick stop",      Eop5,  0,20,100,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x02,0}
+$Clr5 = Button,Set,"*Fault reset",     Qsp5,  0,20,100,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x80,0}
+$Str5 = Button,Set,"*Start",  Clr5,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x1F,0}
+$Stp5 = Button,Set,"*Stop ",  Str5, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x0F,0}
+$Nps5 = Button,Set,"*Halt ",  Str5,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x10F,0}
+$Npr5 = Button,Set,"*NoHlt",  Nps5, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok5,{SdoExecSet5,0x0F,0}
+$Stt5 = Value,"*",            Nps5,  0,25,0x0201,SdoStatGet5,1,0,0,Aok5
+
+$Sod5 = Bit,Stt5,0,35,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet5,0x0040,Aok5,0x0040    // x1xx xxxx
+$Rts5 = Bit,Sod5,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet5,0x007F,Aok5,0x0021    // x010 0001
+$Son5 = Bit,Rts5,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet5,0x007F,Aok5,0x0023    // x010 0011
+$Ope5 = Bit,Son5,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet5,0x007F,Aok5,0x0027    // x010 0111
+$Flt5 = Bit,Ope5,0,15,10,10,0x0003,  Red,Gray,DlgGray,SdoStatGet5,0x0078,Aok5,0x0028    // x010 1xxx
+$Qst5 = Bit,Flt5,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet5,0x007F,Aok5,0x0007    // x000 0111
+$Vlt5 = Bit,Qst5,0,25,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet5,0x0010,Aok5
+$Op85 = Bit,Vlt5,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet5,0x0100,Aok5
+$Trg5 = Bit,Op85,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet5,0x0400,Aok5
+$O125 = Bit,Trg5,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet5,0x1000,Aok5
+$O135 = Bit,O125,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet5,0x2000,Aok5
+$O145 = Bit,O135,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet5,0x4000,Aok5
+$Zer5 = Bit,O145,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet5,0x8000,Aok5
+$St15 = Text,"SwitchOnDisabled",Sod5,13,-4,100,15,-1,15,0x0000,Black,Aok5
+$St25 = Text,"ReadyToSwitchOn", Rts5,13,-4,100,15,-1,15,0x0000,Black,Aok5
+$St35 = Text,"SwitchedOn",      Son5,13,-4,100,15,-1,15,0x0000,Black,Aok5
+$St45 = Text,"OperationEnabled",Ope5,13,-4,100,15,-1,15,0x0000,Black,Aok5
+$St55 = Text,"Fault",           Flt5,13,-4,100,15,-1,15,0x0000,Black,Aok5
+$St65 = Text,"QuickStop",       Qst5,13,-4,100,15,-1,15,0x0000,Black,Aok5
+$Lb15 = Text,"  4: Voltage",    Vlt5,15,-4,100,15,-1,15,0x0000,Black,Aok5
+$Lb25 = Message,Lookup,         Op85,13,-3,100,15,-1,-,0x0000,Aok5,{Bit8Lbl,SdoModeGet5}
+$Lb35 = Text,"10: Target",      Trg5,15,-4,100,15,-1,15,0x0000,Black,Aok5
+$Lb25 = Message,Lookup,         O125,13,-3,100,15,-1,-,0x0000,Aok5,{Bit12Lbl,SdoModeGet5}
+$Lb25 = Message,Lookup,         O135,13,-3,100,15,-1,-,0x0000,Aok5,{Bit13Lbl,SdoModeGet5}
+$Lb25 = Message,Lookup,         O145,13,-3,100,15,-1,-,0x0000,Aok5,{Bit14Lbl,SdoModeGet5}
+$Lb75 = Text,"15: Stopped",     Zer5,15,-4,100,15,-1,15,0x0000,Black,Aok5
+
+$TrgPos5 = Value,"*", Zer5,    -4, 20,0x0100,SdoTrg5,0,0,0,Aok5
+$TrgVel5 = Value,"*", TrgPos5,  0, 30,0x0100,SdoTrgVel5,0,0,0,Aok5
+$PrfVel5 = Value,"*", TrgVel5,  0, 30,0x0100,SdoVel5,0,0,0,Aok5
+$PrfAcc5 = Value,"*", PrfVel5,  0, 30,0x0100,SdoAcc5,0,0,0,Aok5
+$PrfDec5 = Value,"*", PrfAcc5,  0, 30,0x0100,SdoDec5,0,0,0,Aok5
+$MaxVel5 = Value,"*", PrfDec5,  0, 30,0x0100,SdoMaxVel5,0,0,0,Aok5	
+$ActPos5 = Value,"*", MaxVel5,  0, 35,0x0201,SdoAct5,0,0,0,Aok5    // Poll
+$ActVel5 = Value,"*", ActPos5,  0, 30,0x0201,SdoActVel5,0,0,0,Aok5    // Poll
+
+//--------------------------------------------------------------------------------------------
+
+$Axis6 = Box,"*Axis 6",Axis5,150,0,140,800,0x0000
+$Aok6  = Bit,Axis6,20,14,100,5,0x0007,Green,Red,DlgGray,SdoAxisCnt,-1,Hide,6
+
+$SdoModeSet6 = SDO,0x0004,Ctrl,0x8860,0,0,0
+$SdoModeGet6 = SDO,0x0003,Ctrl,0x8861,0,0,0    // Poll
+$SdoExecSet6 = SDO,0x0004,Ctrl,0x8840,0,0,0
+$SdoStatGet6 = SDO,0x0003,Ctrl,0x8841,0,0,0    // Poll
+$SdoSsttGet6 = SDO,0x0003,Ctrl,0x2201,30,0,0    // Poll
+
+$SdoTrg6 = SDO,0x0004,Ctrl,0x887A,0,0,0
+$SdoTrgVel6 = SDO,0x0004,Ctrl,0x88FF,0,0,0
+$SdoVel6 = SDO,0x0004,Ctrl,0x8881,0,0,0
+$SdoAcc6 = SDO,0x0004,Ctrl,0x8883,0,0,0
+$SdoDec6 = SDO,0x0004,Ctrl,0x8884,0,0,0
+$SdoMaxVel6 = SDO,0x0004,Ctrl,0x887F,0,0,0
+$SdoAct6 = SDO,0x0003,Ctrl,0x8864,0,0,0    		// Poll
+$SdoActVel6 = SDO,0x0003,Ctrl,0x886C,0,0,0    // Poll
+
+$Mod6 = List,Lookup,Axis6,20,20,100,250,0x0006,Aok6,{OpModes,SdoModeSet6}
+$Dsp6 = Message,Lookup,Mod6,0,30,100,20,0,-,0x0003,Aok6,{OpModes,SdoModeGet6}
+$Sst6 = Message,Lookup,Dsp6,0,30,100,20,0,-,0x0003,Aok6,{States,SdoSsttGet6}
+$Cmd6 = Value,"*",            Sst6,  0,25,0x0100,SdoExecSet6,1,0,0,Aok6
+$Dis6 = Button,Set,"*Disable voltage", Cmd6,  0,30,100,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x00,0}
+$Rdy6 = Button,Set,"*Shutdown",        Dis6,  0,20,100,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x06,0}
+$Swo6 = Button,Set,"*Switch on",       Rdy6,  0,20,100,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x07,0}
+$Eop6 = Button,Set,"*Enable Operation",Swo6,  0,20,100,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x0F,0}
+$Qsp6 = Button,Set,"*Quick stop",      Eop6,  0,20,100,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x02,0}
+$Clr6 = Button,Set,"*Fault reset",     Qsp6,  0,20,100,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x80,0}
+$Str6 = Button,Set,"*Start",  Clr6,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x1F,0}
+$Stp6 = Button,Set,"*Stop ",  Str6, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x0F,0}
+$Nps6 = Button,Set,"*Halt ",  Str6,  0,20, 45,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x10F,0}
+$Npr6 = Button,Set,"*NoHlt",  Nps6, 55, 0, 45,20,0x0000,-,Black,DlgGray,Aok6,{SdoExecSet6,0x0F,0}
+$Stt6 = Value,"*",            Nps6,  0,25,0x0201,SdoStatGet6,1,0,0,Aok6
+
+$Sod6 = Bit,Stt6,0,35,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet6,0x0040,Aok6,0x0040    // x1xx xxxx
+$Rts6 = Bit,Sod6,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet6,0x007F,Aok6,0x0021    // x010 0001
+$Son6 = Bit,Rts6,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet6,0x007F,Aok6,0x0023    // x010 0011
+$Ope6 = Bit,Son6,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet6,0x007F,Aok6,0x0027    // x010 0111
+$Flt6 = Bit,Ope6,0,15,10,10,0x0003,  Red,Gray,DlgGray,SdoStatGet6,0x0078,Aok6,0x0028    // x010 1xxx
+$Qst6 = Bit,Flt6,0,15,10,10,0x0003,Green,Gray,DlgGray,SdoStatGet6,0x007F,Aok6,0x0007    // x000 0111
+$Vlt6 = Bit,Qst6,0,25,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet6,0x0010,Aok6
+$Op86 = Bit,Vlt6,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet6,0x0100,Aok6
+$Trg6 = Bit,Op86,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet6,0x0400,Aok6
+$O126 = Bit,Trg6,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet6,0x1000,Aok6
+$O136 = Bit,O126,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet6,0x2000,Aok6
+$O146 = Bit,O136,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet6,0x4000,Aok6
+$Zer6 = Bit,O146,0,15,10,10,0x0000,Green,Gray,DlgGray,SdoStatGet6,0x8000,Aok6
+$St16 = Text,"SwitchOnDisabled",Sod6,13,-4,100,15,-1,15,0x0000,Black,Aok6
+$St26 = Text,"ReadyToSwitchOn", Rts6,13,-4,100,15,-1,15,0x0000,Black,Aok6
+$St36 = Text,"SwitchedOn",      Son6,13,-4,100,15,-1,15,0x0000,Black,Aok6
+$St46 = Text,"OperationEnabled",Ope6,13,-4,100,15,-1,15,0x0000,Black,Aok6
+$St56 = Text,"Fault",           Flt6,13,-4,100,15,-1,15,0x0000,Black,Aok6
+$St66 = Text,"QuickStop",       Qst6,13,-4,100,15,-1,15,0x0000,Black,Aok6
+$Lb16 = Text,"  4: Voltage",    Vlt6,15,-4,100,15,-1,15,0x0000,Black,Aok6
+$Lb26 = Message,Lookup,         Op86,13,-3,100,15,-1,-,0x0000,Aok6,{Bit8Lbl,SdoModeGet6}
+$Lb36 = Text,"10: Target",      Trg6,15,-4,100,15,-1,15,0x0000,Black,Aok6
+$Lb26 = Message,Lookup,         O126,13,-3,100,15,-1,-,0x0000,Aok6,{Bit12Lbl,SdoModeGet6}
+$Lb26 = Message,Lookup,         O136,13,-3,100,15,-1,-,0x0000,Aok6,{Bit13Lbl,SdoModeGet6}
+$Lb26 = Message,Lookup,         O146,13,-3,100,15,-1,-,0x0000,Aok6,{Bit14Lbl,SdoModeGet6}
+$Lb76 = Text,"15: Stopped",     Zer6,15,-4,100,15,-1,15,0x0000,Black,Aok6
+
+$TrgPos6 = Value,"*", Zer6,    -4, 20,0x0100,SdoTrg6,0,0,0,Aok6
+$TrgVel6 = Value,"*", TrgPos6,  0, 30,0x0100,SdoTrgVel6,0,0,0,Aok6
+$PrfVel6 = Value,"*", TrgVel6,  0, 30,0x0100,SdoVel6,0,0,0,Aok6
+$PrfAcc6 = Value,"*", PrfVel6,  0, 30,0x0100,SdoAcc6,0,0,0,Aok6
+$PrfDec6 = Value,"*", PrfAcc6,  0, 30,0x0100,SdoDec6,0,0,0,Aok6
+$MaxVel6 = Value,"*", PrfDec6,  0, 30,0x0100,SdoMaxVel6,0,0,0,Aok6
+$ActPos6 = Value,"*", MaxVel6,  0, 35,0x0201,SdoAct6,0,0,0,Aok6    // Poll
+$ActVel6 = Value,"*", ActPos6,  0, 30,0x0201,SdoActVel6,0,0,0,Aok6    // Poll

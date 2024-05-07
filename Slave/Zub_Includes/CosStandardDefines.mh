@@ -1,0 +1,258 @@
+//---------------------------------------------------------------------------------------------------
+// zbcos_standard_defines
+//
+#ifndef ZBCOS_STANDARD_DEFINES_INCLUDED
+    #define ZBCOS_STANDARD_DEFINES_INCLUDED 1
+
+    /************************************************************/
+    /* Commands in Commandword                                  */
+    /************************************************************/
+    #define ZBCOS_CMDMASK               0x8F  // bits      1xxx 1111
+    #define ZBCOS_OPERMASK             0x170  // bits    1 0111 0000
+
+    #define ZBCOS_CMD_SHUTDOWN          0x06  // bits      0xxx x110
+    #define ZBCOS_CMD_SWITCHON          0x07  // bits      0xxx x111
+    #define ZBCOS_CMD_NODISABLEVO       0x02  // bits      0xxx xx1x   Disable voltage if bit is 0.
+    #define ZBCOS_CMD_NOQUICKSTOP       0x04  // bits      0xxx x1xx   Quick stop if bit is 0.
+    #define ZBCOS_CMD_DISABLEOP         0x07  // bits      0xxx 0111   Go to SwitchedOn.
+    #define ZBCOS_CMD_ENABLEOP          0x0F  // bits      0xxx 1111
+    #define ZBCOS_CMD_FAULTRESET        0x80  // bits      1xxx xxxx
+
+    #define ZBCOS_CMDM_OP_HALT         0x100  // bits    1 xxxx xxxx
+    #define ZBCOS_CMDM_PP_NEWSETP       0x10  // bits      xxx1 xxxx
+    #define ZBCOS_CMDM_PP_CHGIMM        0x20  // bits      xx1x xxxx
+    #define ZBCOS_CMDM_PP_RELATIV       0x40  // bits      x1xx xxxx
+    #define ZBCOS_CMDM_OP_START         0x10  // bits      xxx1 xxxx
+    #define ZBCOS_CMDM_IP_START         0x10  // bits      xxx1 xxxx
+
+    #define ZBCOS_CMD_ZB_MULTIAX        0x8000 // bit 1xxx xxxx xxxx xxxx
+    #define ZBCOS_CMD_ZB_BIT11          0x0800 // bit xxxx 1xxx xxxx xxxx (zub specific)
+
+    /************************************************************/
+    /* Status bits in the Statusword                            */
+    /************************************************************/
+    /* bits are defined as follows:
+       15 14 13  12   11  10  9  8    7  6   5  4 3  2  1    0
+       ms ms oms oms  ila tr rm ms    w sod qs ve f oe so rtso
+
+       with the meaning
+       0 - rtso = ready to switch on
+       1 - so   = switched on
+       2 - oe   = operation enabled
+       3 - f    = fault
+       4 - ve   = voltage enabled
+       5 - qs   = quick stop active (0)
+       6 - sod  = switch on disabled
+       7 - w    = warning
+
+       8 - ms   = manufacturer specific
+       9 - rm   = remote (controlword is processed)
+      10 - tr   = target reached (op specific)
+      11 - ila  = internal limit active (ms)
+      12 - oms  = operation mode specific (set point acknowledge / )
+      13 - oms  = operation mode specific (trackerr / home err)
+      14 - ms   = manufacturer specific
+      15 - ms   = manufacturer specific (velocity is zero)
+
+    */
+    #define ZBCOS_STW_SWITCHONDIS      0x40  // bits     x1x0 0000
+    #define ZBCOS_STW_READYTOSW        0x21  // bits     x010 0001
+    #define ZBCOS_STW_SWITCHEDON       0x23  // bits     x010 0011
+    #define ZBCOS_STW_OPERATIONEN      0x27  // bits     x010 0111
+    #define ZBCOS_STW_FAULT            0x28  // bits     x010 1000
+    #define ZBCOS_STW_QUICKSTOPACT     0x07  // bits     x000 0111
+    #define ZBCOS_STW_CANFAULT         0x2D  // bits     x010 1101  Ferag specific
+
+    #define ZBCOS_STW_VOLTAGE_BIT           4 // bit     xxxx xxxx xxx1 xxxx    signals that supply voltage for power is ok
+
+    #define ZBCOS_STW_OP_BIT8               8 // bit     xxxx xxx1 xxxx xxxx   (mode specific)
+
+    #define ZBCOS_STW_TARGET_BIT           10 // bit     xxxx x1xx xxxx xxxx   (target reached)
+
+	#define ZBCOS_STW_OP_BIT11             11 // bit     xxx1 xxxx xxxx xxxx   (mode specific) i.e. internal limit
+    #define ZBCOS_STW_OP_BIT12             12 // bit     xxx1 xxxx xxxx xxxx   (mode specific) i.e. setpoint ack
+    #define ZBCOS_STW_OP_BIT13             13 // bit     xx1x xxxx xxxx xxxx   (mode specific)
+    #define ZBCOS_STW_PRW_SUPPLY_BIT       14 // bit     x1xx xxxx xxxx xxxx   (zub specific)
+    #define ZBCOS_STW_ZEROVEL_BIT          15 // bit     1xxx xxxx xxxx xxxx    signals that velocity is zero (zub specific)
+
+    #define ZBCOS_STW_EXTMASK          0xFF00 // Extension bits maskieren
+
+    /************************************************************/
+    /* MODES of operation                                       */
+    /************************************************************/
+    #define ZBCOS_MODOP_NOMODE            0x00
+
+    #define ZBCOS_MODOP_POSITION          0x01  // Profile Position Mode
+    #define ZBCOS_MODOP_VELOCITY          0x03  // Profile Velocity Mode
+    #define ZBCOS_MODOP_HOME              0x06  // Homing Mode
+    #define ZBCOS_MODOP_INTERPOLPOS       0x07  // Interpolated Position Mode
+
+    #define ZBCOS_MODOP_CSP		         0x08  	// Cyclic sync position mode
+    #define ZBCOS_MODOP_CSV		         0x09  	// Cyclic sync velocity mode
+    #define ZBCOS_MODOP_CST		         0x0A  	// Cyclic sync torque mode
+
+    #define ZBCOS_MODOP_MASTER_POSITION   0xFD  // Positioning with Master encoder correction at the end
+    #define ZBCOS_MODOP_MASTER_P_POSITION 0xFC  // Positioning with permanent Master encoder correction
+    #define ZBCOS_MODOP_APP_E0            0xE0  // Application mode
+    #define ZBCOS_MODOP_APP_E1            0xE1  // Application mode
+
+    // Supported modes - Bits for Drive Modes 0x6502
+ 	#define ZBCOS_DRIVEMODE_BIT_PPM			0	// Bit 0: Profile Position Mode (PPM)
+	#define ZBCOS_DRIVEMODE_BIT_VM			1	// Bit 1: Velocity Mode
+	#define ZBCOS_DRIVEMODE_BIT_PVM			2	// Bit 2: Profile Velocity Mode (PVM)
+	#define ZBCOS_DRIVEMODE_BIT_TM			3	// Bit 3: Torque Mode
+	#define ZBCOS_DRIVEMODE_BIT_RES_4		4	// Bit 4: reserved
+	#define ZBCOS_DRIVEMODE_BIT_HHM			5	// Bit 5: Homing Mode (HMM)
+	#define ZBCOS_DRIVEMODE_BIT_IPM			6	// Bit 6: Interpolated Position Mode (IPM)
+	#define ZBCOS_DRIVEMODE_BIT_CSP			7	// Bit 7: Cyclic Synchronous Position Mode (CSP)
+	#define ZBCOS_DRIVEMODE_BIT_CSV			8	// Bit 8: Cyclic Synchronous Velocity Mode (CSV)
+	#define ZBCOS_DRIVEMODE_BIT_CST			9	// Bit 9: Cyclic Synchronous Torque Mode (CST)
+    #define ZBCOS_DRIVEMODE_BIT_CST_CA		10	// Bit 10: Cyclic Synchronous Torque Mode With Commutation Angle
+	#define ZBCOS_DRIVEMODE_BIT_MP			16	// Bit 16: Positioning with Master encoder correction at the end
+	#define ZBCOS_DRIVEMODE_BIT_MPP			17	// Bit 17: Positioning with permanent Master encoder correction
+	#define ZBCOS_DRIVEMODE_BIT_APP_0		20	// Bit 20: Application mode 0
+	#define ZBCOS_DRIVEMODE_BIT_APP_1		21	// Bit 21: Application mode 1
+
+    /************************************************************/
+    /* USER Indices                                             */
+    /************************************************************/
+    // 0x01 is reserved for CMDCOUNTERS
+    // we reserved 0x02 .. 0x10 for test purposes
+
+    // to detect multi-axis commands, we use one byte in the PDO.
+    #define  ZBCOS_CUI_MULTI_AX_BASE      0x01220111  // base adress + axis no
+    #define  ZBCOS_CUI_MULTI_AX_CNT_1     0x01220111  // Tells if this axis is used in multi-axis command and how many axes are used
+    #define  ZBCOS_CUI_MULTI_AX_CNT_2     0x01220112  // Tells if this axis is used in multi-axis command and how many axes are used
+    #define  ZBCOS_CUI_MULTI_AX_CNT_3     0x01220113  // Tells if this axis is used in multi-axis command and how many axes are used
+    #define  ZBCOS_CUI_MULTI_AX_CNT_4     0x01220114  // Tells if this axis is used in multi-axis command and how many axes are used
+    #define  ZBCOS_CUI_MULTI_AX_CNT_5     0x01220115  // Tells if this axis is used in multi-axis command and how many axes are used
+    #define  ZBCOS_CUI_MULTI_AX_CNT_6     0x01220116  // Tells if this axis is used in multi-axis command and how many axes are used
+    #define  ZBCOS_CUI_MULTI_AX_CNT_7     0x01220117  // Tells if this axis is used in multi-axis command and how many axes are used
+    #define  ZBCOS_CUI_MULTI_AX_CNT_8     0x01220118  // Tells if this axis is used in multi-axis command and how many axes are used
+
+    // mode specific states
+    #define  ZBCOS_CUI_MODE_STATE_BASE    0x01220119
+    #define  ZBCOS_CUI_MODE_STATE_1       0x01220119
+    #define  ZBCOS_CUI_MODE_STATE_2       0x0122011A
+    #define  ZBCOS_CUI_MODE_STATE_3       0x0122011B
+    #define  ZBCOS_CUI_MODE_STATE_4       0x0122011C
+    #define  ZBCOS_CUI_MODE_STATE_5       0x0122011D
+    #define  ZBCOS_CUI_MODE_STATE_6       0x0122011E
+    #define  ZBCOS_CUI_MODE_STATE_7       0x0122011F
+    #define  ZBCOS_CUI_MODE_STATE_8       0x01220120
+
+
+    /************************************************************/
+    /* DSP 402 Indices                                          */
+    /************************************************************/
+    #define ZBCOI_AXESOFFSET       0x00080000
+    #define ZBCOI_CONTROLWORD      0x01604000
+    #define ZBCOI_MODEOFOP         0x01606000
+    #define ZBCOI_STATUSWORD       0x01604100
+    #define ZBCOI_MODEDISP         0x01606100
+    #define ZBCOI_TARGETPOS        0x01607A00
+    #define ZBCOI_HOMEOFFSET       0x01607C00
+    #define ZBCOI_PROFILEVEL       0x01608100
+    #define ZBCOI_PROFILEACC       0x01608300
+    #define ZBCOI_PROFILEDEC       0x01608400
+    #define ZBCOI_QUICKSTOPRAMP    0x01608500
+    #define ZBCOI_HOMEMODE         0x01609800
+    #define ZBCOI_HOMEOFFSET       0x01607C00
+    #define ZBCOI_HOMEVEL          0x01609901
+    #define ZBCOI_HOMEZEROVEL      0x01609902
+    #define ZBCOI_HOMEACC          0x01609A00
+    #define ZBCOI_ERRRORCODE       0x01603F00
+    #define ZBCOI_POSITIONOPTCODE  0x0160F200
+    #define ZBCOI_ABORTOPCODE      0x01600700
+    #define ZBCOI_QUICKOPTCODE     0x01605A00
+    #define ZBCOI_SHUTDOWNOPTCODE  0x01605B00
+    #define ZBCOI_DISABLEOPTCODE   0x01605C00
+    #define ZBCOI_HALTOPTCODE      0x01605D00
+    #define ZBCOI_FAULTOPTCODE     0x01605E00
+    #define ZBCOI_ACTVEL		   0x01606C00
+    #define ZBCOI_TARGETTORQUE	   0x01607100
+    #define ZBCOI_MOTRATEDTORQUE   0x01607600
+    #define ZBCOI_ACTTORQUE		   0x01607700
+    #define ZBCOI_MAXVEL		   0x01607F00
+    #define ZBCOI_TARGETVEL		   0x0160FF00
+    #define ZBCOI_DRIVEMODE		   0x01650200
+
+    // bit combinations for some opt codes
+    // Positioning
+    #define ZBCOS_POSOPT_POSRELATIVE_CPOS         	0x01   // relative moves are done relative to the command position
+    #define ZBCOS_POSOPT_POSRELATIVE_APOS         	0x02   // relative moves are done relative to the actual position
+    #define ZBCOS_POSOPT_CI_CONTINUE_TARGET       	0x04   // move is continued without stopping at target and new move is started when target is passed
+    #define ZBCOS_POSOPT_POSRESPONSE_AUTO_TARGET  	0x10   // new setpoint bit released automatically as soon as target reached
+    #define ZBCOS_POSOPT_POSRESPONSE_AUTO_READY   	0x20   // new setpoint bit released automatically as soon as possible
+
+
+    // Qucikstop
+    #define ZBCOS_QUICKSTOP_DIS_DRV     			0x00   // Disable drive function
+    #define ZBCOS_QUICKSTOP_SLW_DIS        			0x01   // Slow down on slow down ramp and transit into switch on disabled
+    #define ZBCOS_QUICKSTOP_Q_DIS        			0x02   // Slow down on quick stop ramp and transit into switch on disabled
+    #define ZBCOS_QUICKSTOP_SLW_ACT         		0x05   // Slow down on slow down ramp and stay in quick stop active
+    #define ZBCOS_QUICKSTOP_Q_ACT      				0x06   // Slow down on quick stop ramp and stay in quick stop active
+
+    /************************************************************/
+    /* Internal Indices                                         */
+    /************************************************************/
+    #define ZBINT_AXESOFFSET       0x00000100
+    #define ZBCOI_INTERNALVEL      0x01300007
+    #define ZBCOI_INTERNALACC      0x01300008
+    #define ZBCOI_INTERNALDEC      0x01300009
+    #define ZBCOI_INTERNALQUICKDEC 0x0130000A    // QuickStopDeceleration
+    #define ZBCOI_INTERNALTARGVEL  0x0130000B
+    #define ZBCOI_INTAXESOFFSET    0x00000100
+    #define ZBCOI_FIRMWAREVERSION  0x01220902
+    #define ZBCOI_APPVERSION       0x01220904
+    #define ZBCOI_AVAILABLEAXES    0x01220905
+    #define ZBCOI_SUPPLYVOLTAGE    0x01480008   // has to be corrected TBD
+
+    /************************************************************/
+    /* Utility Macros                                           */
+    /************************************************************/
+    #define ZBCOS_AXES_SDO(axis,ind) Sysvar[ind + (axis)*ZBCOI_AXESOFFSET]
+
+    #define ZBCO_CONTROLWORD(axis)      Sysvar[ZBCOI_CONTROLWORD      + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_MODEOFOP(axis)         Sysvar[ZBCOI_MODEOFOP         + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_STATUSWORD(axis)       Sysvar[ZBCOI_STATUSWORD       + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_MODEDISP(axis)         Sysvar[ZBCOI_MODEDISP         + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_TARGETPOS(axis)        Sysvar[ZBCOI_TARGETPOS        + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_HOMEOFFSET(axis)       Sysvar[ZBCOI_HOMEOFFSET       + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_PROFILEVEL(axis)       Sysvar[ZBCOI_PROFILEVEL       + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_PROFILEACC(axis)       Sysvar[ZBCOI_PROFILEACC       + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_PROFILEDEC(axis)       Sysvar[ZBCOI_PROFILEDEC       + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_QUICKSTOPRAMP(axis)    Sysvar[ZBCOI_QUICKSTOPRAMP    + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_HOMEMODE(axis)         Sysvar[ZBCOI_HOMEMODE         + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_HOMEOFFSET(axis)      	Sysvar[ZBCOI_HOMEOFFSET       + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_HOMEVEL(axis)          Sysvar[ZBCOI_HOMEVEL          + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_HOMEZEROVEL(axis)      Sysvar[ZBCOI_HOMEZEROVEL      + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_HOMEACC(axis)          Sysvar[ZBCOI_HOMEACC          + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_ERRRORCODE(axis)       Sysvar[ZBCOI_ERRRORCODE       + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_POSITIONOPTCODE(axis)  Sysvar[ZBCOI_POSITIONOPTCODE  + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_ABORTOPCODE(axis)      Sysvar[ZBCOI_ABORTOPCODE      + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_QUICKOPTCODE(axis)     Sysvar[ZBCOI_QUICKOPTCODE     + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_SHUTDOWNOPTCODE(axis)  Sysvar[ZBCOI_SHUTDOWNOPTCODE  + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_DISABLEOPTCODE(axis)   Sysvar[ZBCOI_DISABLEOPTCODE   + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_HALTOPTCODE(axis)      Sysvar[ZBCOI_HALTOPTCODE      + ZBCOI_AXESOFFSET *(axis)]
+    #define ZBCO_FAULTOPTCODE(axis)     Sysvar[ZBCOI_FAULTOPTCODE     + ZBCOI_AXESOFFSET *(axis)]
+	#define ZBCO_ACTVEL(axis)     		Sysvar[ZBCOI_ACTVEL     	  + ZBCOI_AXESOFFSET *(axis)]
+	#define ZBCO_MAXVEL(axis)     		Sysvar[ZBCOI_MAXVEL     	  + ZBCOI_AXESOFFSET *(axis)]
+	#define ZBCO_TARGETTORQUE(axis)     Sysvar[ZBCOI_TARGETTORQUE     + ZBCOI_AXESOFFSET *(axis)]
+	#define ZBCO_MOTRATEDTORQUE(axis)   Sysvar[ZBCOI_MOTRATEDTORQUE   + ZBCOI_AXESOFFSET *(axis)]
+	#define ZBCO_ACTTORQUE(axis)     	Sysvar[ZBCOI_ACTTORQUE     	  + ZBCOI_AXESOFFSET *(axis)]
+	#define ZBCO_TARGETVEL(axis)     	Sysvar[ZBCOI_TARGETVEL     	  + ZBCOI_AXESOFFSET *(axis)]
+	#define ZBCO_DRIVEMODE(axis)     	Sysvar[ZBCOI_DRIVEMODE     	  + ZBCOI_AXESOFFSET *(axis)]
+
+    #define ZBCO_INTERNALVEL(axis)      Sysvar[ZBCOI_INTERNALVEL      + ZBINT_AXESOFFSET *(axis)]
+    #define ZBCO_INTERNALACC(axis)      Sysvar[ZBCOI_INTERNALACC      + ZBINT_AXESOFFSET *(axis)]
+    #define ZBCO_INTERNALDEC(axis)      Sysvar[ZBCOI_INTERNALDEC      + ZBINT_AXESOFFSET *(axis)]
+    #define ZBCO_INTERNALQUICKDEC(axis) Sysvar[ZBCOI_INTERNALQUICKDEC + ZBINT_AXESOFFSET *(axis)]
+	#define ZBCO_INTERNALTARGVEL(axis)  Sysvar[ZBCOI_INTERNALTARGVEL  + ZBINT_AXESOFFSET *(axis)]
+
+    #define ZBCO_FIRMWAREVERSION()	    Sysvar[ZBCOI_FIRMWAREVERSION]
+    #define ZBCO_APPVERSION()       	Sysvar[ZBCOI_APPVERSION]
+    #define ZBCO_AVAILABLEAXES()    	Sysvar[ZBCOI_AVAILABLEAXES]
+    #define ZBCO_SUPPLYVOLTAGE()    	Sysvar[ZBCOI_SUPPLYVOLTAGE]
+
+#endif

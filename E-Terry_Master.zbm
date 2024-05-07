@@ -1,0 +1,221 @@
+[VARIABLES]
+#include "Include\11_User_Interface_Defines.mh"
+
+WindowWidth    = 830
+WindowHeight   = 800
+WindowTitle    = E-Terry Monitor
+WindowFlags    = 0x0022
+OpFlags        = 0x0001
+Pollinterval   = 100             // ms interval for polling
+
+// USB Connection
+$Ctrl = Controller,0x0001,1,(1,USB,6,50,0x0,921600,1)
+
+$Cmd		= SDO,0x0001,Ctrl,0x2201,USER_MONITOR_COMMAND,-,-,0
+$Sens		= SDO,0x0001,Ctrl,0x2201,USER_MONITOR_SENSOR,-,-,0
+$Remote		= SDO,0x0001,Ctrl,0x2201,USER_MONITOR_REMOTE,-,-,0
+$SetVel	= SDO,0x0004,Ctrl,0x2201,USER_SETVELCONST,-,-,0
+$SetAcc	= SDO,0x0004,Ctrl,0x2201,USER_SETACC,-,-,0
+$SetDec	= SDO,0x0004,Ctrl,0x2201,USER_SETDEC,-,-,0
+$SetJerk	= SDO,0x0004,Ctrl,0x2201,USER_SETJERK,-,-,0
+
+
+$DspAp1	= SDO,0x0001,Ctrl,0x6064,0x00,-,-,0
+$DspAp2	= SDO,0x0001,Ctrl,0x6864,0x00,-,-,0
+$DspAp3	= SDO,0x0001,Ctrl,0x7064,0x00,-,-,0
+$DspWpQc1	= SDO,0x0001,Ctrl,0x2503,0x01,-,-,0
+$DspWpQc2	= SDO,0x0001,Ctrl,0x2504,0x01,-,-,0
+$DspWpQc3	= SDO,0x0001,Ctrl,0x2505,0x01,-,-,0
+$DspWp1	= SDO,0x0001,Ctrl,0x7864,0x00,-,-,0
+$DspWp2	= SDO,0x0001,Ctrl,0x8064,0x00,-,-,0
+$DspWp3	= SDO,0x0001,Ctrl,0x8864,0x00,-,-,0
+$DspWv1	= SDO,0x0001,Ctrl,0x2503,0x04,-,-,0
+$DspWv2	= SDO,0x0001,Ctrl,0x2504,0x04,-,-,0
+$DspWv3	= SDO,0x0001,Ctrl,0x2505,0x04,-,-,0
+$DspPivotX= SDO,0x0001,Ctrl,0x2201,USR_MONITOR_ACH_PIVOT_X,-,-,0
+$DspPivotY= SDO,0x0001,Ctrl,0x2201,USR_MONITOR_ACH_PIVOT_Y,-,-,0
+$DspJBoost= SDO,0x0001,Ctrl,0x2201,USR_MONITOR_JOISTICK_BOOST,-,-,0
+$DSPJSteering= SDO,0x0001,Ctrl,0x2201,USR_MONITOR_JOISTICK_STEERING,-,-,0
+
+$DspSmS= SDO,0x0001,Ctrl,0x2201,USR_MONITOR_DSP_STATUS,-,-,0
+
+$SmStateText = Table,0x0000,("*MotorsOff",DSP_MOTOFF,\
+                             "*VehicleOn",DSP_VEHICLEON,\
+							 "*CheckConfig",DSP_HOMING,\
+                             "*Homing",DSP_HOMING,\
+                             "*Homing->SearchIndex",DSP_HOMING_SEARCH,\
+                             "*Homing->WaitStandStill",DSP_HOMING_WAIT,\
+                             "*Homing->ZeroMove",DSP_HOMING_ZERO_MOVE,\
+                             "*Running",DSP_RUNNING,\
+							 "*Running->Stopped",DSP_STOP,\
+							 "*Running->StraightDrive",DSP_STRAIGHT_DRIVE,\
+							 "*Running->CurveDrive",DSP_CURVE_DRIVE,\
+							 "*Running->RotCenter",DSP_ROTCENTER,\
+							 "*Running->RotWheel_1",DSP_ROTWHEEL_1,\
+							 "*Running->RotWheel_2",DSP_ROTWHEEL_2,\
+							 "*Running->RotWheel_3",DSP_ROTWHEEL_3,\
+							  "*Running->RotWheel_1_3",DSP_ROTWHEEL_1_3,\
+							 "*Running->ChangeMovement",DSP_CHANGE_MOVE,\
+							 "*Running->ManualForward",DSP_M_FORWARD,\
+							 "*Running->ManualBackward",DSP_M_BACKWARD,\
+							 "*Running->FoldDrive",DSP_M_FOLDDRIVE)
+
+
+							 DSP_CHANGE_MOVE
+// Font Definition --------------------------------------------------------------------------------
+$Font  = Font,0x0000,(-11,0,0,0,700,0,0,0,0,0,0,0,0,"MS Shell Dlg 2")
+$FSym   = Font,0x0000,(-20,0,0,0,400,0,0,0,0,0,0,0,0,"MS Shell Dlg 2")
+
+$Zero  = Constant,0x0,0
+$ArrNum = Constant,0x0,0
+
+$CtrlBox = Box,"*Controller",-,20,15,480,70,0x0000,-
+$CtrlStr = Text,"Controller:",CtrlBox,25,30,80,40,-1,-,0x0,Black,-
+$CtrlNam = Message,Controller,CtrlStr,70,-2,130,20,0,16,0x0002,-,{Ctrl,Black}
+$Select  = Button,Controller,"*Select Controller",CtrlNam,150,-3,170,30,0x0,0,Black,DlgGray,-,{Ctrl}
+$StPoll  = Button,PollStart,"*Poll",Select,180,0,40,30,0x0,0,Black,DlgGray,-
+
+// Logo
+$Logo = Bitmap,"Include\zub-Logo_gr.bmp",-,510,20,0x00,-
+
+// Kinematics box
+$Kinematics = Box,"*E-Terry",-,20,100,800,590,0x0000,-
+
+
+// Display Box --------------------------------------------------------------------------------------
+$Display = Box,"*Actual Values",Kinematics,20,20,420,250,0x0,-
+
+$DspStatTxt		= Text,"Status     ",  Display,10, 25, 80,15,1,0,0x0,Black,-
+$DspArmTxt		= Text,"Status Shaft 1" ,  Display,120,55, 80,15,1,0,0x0,Black,-
+$DspArmTxt		= Text,"Status Shaft 2" ,  Display,210,55, 80,15,1,0,0x0,Black,-
+$DspArmTxt		= Text,"Status Shaft 3" ,  Display,300,55, 80,15,1,0,0x0,Black,-
+$DspArmTxt		= Text,"Actuator Angle (°) ",  Display,10, 85, 100,15,1,0,0x0,Black,-
+$DspArmTxt		= Text,"Wheel Pos 	(qc)",  Display,10,115, 100,15,1,0,0x0,Black,-
+$DspArmTxt		= Text,"Position 	(m)",  Display,10,145, 100,15,1,0,0x0,Black,-
+$DspArmTxt		= Text,"Wheel Speed (m/s)",  Display,10,175, 100,15,1,0,0x0,Black,-
+$DspAchTxt		= Text,"Pivot Point X | Y(m)",  Display,10,205, 100,15,1,0,0x0,Black,-
+
+$DspStatBit    = Bit,DspStatVal,140,0,20,20,0x0000,red,green,grey,DspSmS,0x01,-,0x01
+
+
+$DspStatVal		= Message,Lookup, Display,120,20,120,20,-1,0,0x0002,-,{SmStateText,DspSmS}     // Bob added this for the state machine state (using message box).
+$DspStAn1Val	= Value,"*", Display,120, 80,0x0201,DspAp1 ,0,-,USER_FACTOR_SCALE,-
+$DspWhPosQc1Val	= Value,"*", Display,120,110,0x0201,DspWpQc1 ,0,-,1,-
+$DspWhPos1Val	= Value,"*", Display,120,140,0x0201,DspWp1 ,0,-,1,-
+$DspWhSpe1Val	= Value,"*", Display,120,170,0x0201,DspWv1 ,0,-,26,-
+
+$DspStAn2Val	= Value,"*", Display,210, 80,0x0201,DspAp2 ,0,-,USER_FACTOR_SCALE,-
+$DspWhPosQc2Val	= Value,"*", Display,210,110,0x0201,DspWpQc2 ,0,-,1,-
+$DspWhPos2Val	= Value,"*", Display,210,140,0x0201,DspWp2 ,0,-,1,-
+$DspWhSpe2Val	= Value,"*", Display,210,170,0x0201,DspWv2 ,0,-,26,-
+
+$DspStAn3Val	= Value,"*", Display,300, 80,0x0201,DspAp3 ,0,-,USER_FACTOR_SCALE,-
+$DspWhPosQc3Val	= Value,"*", Display,300,110,0x0201,DspWpQc3 ,0,-,1,-
+$DspWhPos3Val	= Value,"*", Display,300,140,0x0201,DspWp3 ,0,-,1,-
+$DspWhSpe3Val	= Value,"*", Display,300,170,0x0201,DspWv3 ,0,-,26,-
+
+$DspPivotXVal	= Value,"*", Display,120,200,0x0201,DspPivotX ,0,-,1000,-
+$DspPivotYVal	= Value,"*", Display,210,200,0x0201,DspPivotY ,0,-,1000,-
+
+// Command Box --------------------------------------------------------------------------------------
+$CommandBox = Box,"*RC remote control",Display,0,260,420,290,0x0,-
+
+$BMotoff		= Button,Set,"*MotorOff" ,CommandBox,10,  20,80,25,0x0000,Font,[177.100.201],DlgGray,-,{Cmd,CMD_MOTOFF,-}
+$BMoton			= Button,Set,"*VehicleOn"  ,CommandBox,10,  50,80,25,0x0000,Font,[177.100.201],DlgGray,-,{Cmd,CMD_VEHICLE_ENB,-}
+$BHomming		= Button,Set,"*Homing",CommandBox,10,  80,80,25,0x0000,Font,[177.100.201],DlgGray,-,{Cmd,CMD_HOMING,-}
+$BStop			= Button,Set,"*Stop",CommandBox,10,  110,80,25,0x0000,Font,[177.100.201],DlgGray,-,{Cmd,CMD_STOP,-}
+
+$DspjBoostTxt	= Text,"Joyst. Boost",  	CommandBox,10,220, 100,15,1,0,0x0,Black,-
+$DspjSteerTxt	= Text,"Joyst. Steering",  CommandBox,10,250, 100,15,1,0,0x0,Black,-
+$DspjBoostVal	= Value,"*", CommandBox,120,220,0x0201,DspJBoost ,0,-,1,-
+$DspjSteerVal	= Value,"*", CommandBox,120,250,0x0201,DSPJSteering ,0,-,1,-
+
+$Remote0  = Checkbox,CommandBox,180,20,0x0000,Remote,REMOTE_INVERT_MODE,-
+$Remote1  = Checkbox,Remote0,0,20,0x0000,Remote,REMOTE_ROT_CENTRALPOINT,-
+$Remote2  = Checkbox,Remote1,0,20,0x0000,Remote,REMOTE_SLOW_MODE,-
+$Remote3  = Checkbox,Remote2,0,20,0x0000,Remote,REMOTE_SET_CONST_SPEED,-
+$Remote4  = Checkbox,Remote3,0,20,0x0000,Remote,REMOTE_DATA_LOGGING,-
+$Remote5  = Checkbox,Remote4,0,20,0x0000,Remote,REMOTE_VEHICLE_ON,-
+$Remote6  = Checkbox,Remote5,0,20,0x0000,Remote,REMOTE_CURVE_DRIVE,-
+$Remote7  = Checkbox,Remote6,0,20,0x0000,Remote,REMOTE_SEMI_AUTO_ON,-
+$Remote8  = Checkbox,Remote7,0,20,0x0000,Remote,REMOTE_SEMI_AUTO_CURVE,-
+
+$RemoteTxt0		= Text,"InvertMode",CommandBox,80, 20, 85,15,1,0,0x0,Black,-
+$RemoteTxt1		= Text,"RotCentrP",RemoteTxt0,0, 20, 85,15,1,0,0x0,Black,-
+$RemoteTxt2		= Text,"SlowMode",RemoteTxt1,0, 20, 85,15,1,0,0x0,Black,-
+$RemoteTxt3		= Text,"ConstSpeed",RemoteTxt2,0, 20, 85,15,1,0,0x0,Black,-
+$RemoteTxt4		= Text,"DataLogging",RemoteTxt3,0, 20, 85,15,1,0,0x0,Black,-
+$RemoteTxt5		= Text,"VehicleOn",RemoteTxt4,0, 20, 85,15,1,0,0x0,Black,-
+$RemoteTxt6		= Text,"CurveTrip",RemoteTxt5,0, 20, 85,15,1,0,0x0,Black,-
+$RemoteTxt7		= Text,"SemiAutoOn",RemoteTxt6,0, 20, 85,15,1,0,0x0,Black,-
+$RemoteTxt8		= Text,"SemiAutoCurve",RemoteTxt7,0, 20, 85,15,1,0,0x0,Black,-
+
+
+#define TBS  60  // Joistick Button Size
+#define TBDV 65  // Teach Button Distance Vertical
+#define TBDH 65  // Teach Button Distance Horizontal
+$BStop   		= Button,Set,"*S",CommandBox,  		280,  85,TBS,TBS,0x0000,FSym,[177.100.201],DlgGray,-,{Cmd,CMD_STOP,-}
+$BBoostUp		= Button,Set,"*↑",CommandBox,		280, 20,TBS,TBS,0x0000,FSym,[177.100.201],DlgGray,-,{Cmd,CMD_JOYSTICK_BOOST_UP,-}
+$BSteeringLeft	= Button,Set,"*←",CommandBox,  		215 , 85,TBS,TBS,0x0000,FSym,[177.100.201],DlgGray,-,{Cmd,CMD_JOYSTICK_STEERING_LEFT,-}
+$BSteeringRight	= Button,Set,"*→",CommandBox,  		345,  85,TBS,TBS,0x0000,FSym,[177.100.201],DlgGray,-,{Cmd,CMD_JOYSTICK_STEERING_RIGHT,-}
+$BBoostDown		= Button,Set,"*↓",CommandBox,  		280,  150,TBS,TBS,0x0000,FSym,[177.100.201],DlgGray,-,{Cmd,CMD_JOYSTICK_BOOST_DOWN,-}
+
+
+
+// Motion Parameter Box --------------------------------------------------------------------------------------
+$MotionParamBox = Box,"*Motion Parameter",Display,440,0,320,250,0x0,-
+
+$TopTxt  = Text,"Constant Drive",MotionParamBox,90, 25, 85,15,1,0,0x0,Black,-
+
+$VelTxt			= Text,"Vel (mm/s)",MotionParamBox,10, 55, 85,15,1,0,0x0,Black,-
+$AccTxt			= Text,"Acc (mm/s²)",MotionParamBox,10, 85, 85,15,1,0,0x0,Black,-
+$DeccTxt		= Text,"Dec (mm/s²)",MotionParamBox,10, 115, 85,15,1,0,0x0,Black,-
+$JrkTxt			= Text,"Jerk(mm/s³)",MotionParamBox,10,145, 85,15,1,0,0x0,Black,-
+
+$SetVelVal  	= Value,"*", MotionParamBox,100, 50,0x0204,SetVel,0,-,0,-
+$SetAccVal  	= Value,"*", MotionParamBox,100, 80,0x0204,SetAcc,0,-,0,-
+$SetDecVal  	= Value,"*", MotionParamBox,100,110,0x0204,SetDec,0,-,0,-
+$SetJrkVal  	= Value,"*", MotionParamBox,100,140,0x0204,SetJerk,0,-,0,-
+
+
+$BChangeVel		= Button,Set,"*VelUpd",MotionParamBox,10, 210 ,60,25,0x0000,Font,[177.100.201],DlgGray,-,{Cmd,CMD_CHANGEVEL,-}
+$BSaveVel		= Button,Set,"*VelSave",MotionParamBox,80, 210 ,60,25,0x0000,Font,[177.100.201],DlgGray,-,{Cmd,CMD_SAVEVEL,-}
+
+// IO Box ------------------------------------------------------------------------------------------
+$IOBox  = Box,"*IO-Box",CommandBox,440,0,320,390,0x0,-
+
+$DigOut1 		= SDO,0x0001,Ctrl,0x2D43,01,-,-
+$DigOut2 		= SDO,0x0001,Ctrl,0x2D44,01,-,-
+$DigOut3 		= SDO,0x0001,Ctrl,0x2D45,01,-,-
+
+$DspDigOut11		= Bit,IOBox,120, 25,12,12,0x0000,green,white,grey,DigOut1,0x20000,-,0
+$DspDigOut12		= Bit,IOBox,135, 25,12,12,0x0000,red,white,grey,DigOut1,0x10000,-,0
+$DspDigOut21		= Bit,DspDigOut11,0, 20,12,12,0x0000,green,white,grey,DigOut2,0x20000,-,0
+$DspDigOut22		= Bit,DspDigOut11,15, 20,12,12,0x0000,red,white,grey,DigOut2,0x10000,-,0
+$DspDigOut31		= Bit,DspDigOut21,0, 20,12,12,0x0000,green,white,grey,DigOut3,0x20000,-,0
+$DspDigOut32		= Bit,DspDigOut21,15, 20,12,12,0x0000,red,white,grey,DigOut3,0x10000,-,0
+$DigOut1Txt		= Text,"LED Shaft 1",IOBox,20, 26, 85,15,1,0,0x0,Black,-
+$DigOut2Txt		= Text,"LED Shaft 2",DigOut1Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigOut3Txt		= Text,"LED Shaft 3",DigOut2Txt,0, 20, 85,15,1,0,0x0,Black,-
+
+$Sens0  = Checkbox,IOBox,120,100,0x0000,Sens,SENS_ZERO_ACT_DRIVE_1,-
+$Sens1  = Checkbox,Sens0,0,20,0x0000,Sens,SENS_ZERO_ACT_DRIVE_2,-
+$Sens2  = Checkbox,Sens1,0,20,0x0000,Sens,SENS_ZERO_ACT_DRIVE_3,-
+$Sens3  = Checkbox,Sens2,0,20,0x0000,Sens,SENS_CONFIGURATION_1,-
+$Sens4  = Checkbox,Sens3,0,20,0x0000,Sens,SENS_CONFIGURATION_2,-
+$Sens5  = Checkbox,Sens4,0,20,0x0000,Sens,SENS_MANUAL_EBOX_1,-
+$Sens6  = Checkbox,Sens5,0,20,0x0000,Sens,SENS_MANUAL_EBOX_2,-
+$Sens7  = Checkbox,Sens6,0,20,0x0000,Sens,SENS_MANUAL_TRAV_3_1,-
+$Sens8  = Checkbox,Sens7,0,20,0x0000,Sens,SENS_MANUAL_TRAV_3_2,-
+
+$DigIn1Txt		= Text,"Zero Actuator 1",IOBox,20, 100, 85,15,1,0,0x0,Black,-
+$DigIn2Txt		= Text,"Zero Actuator 2",DigIn1Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigIn3Txt		= Text,"Zero Actuator 3",DigIn2Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigIn4Txt		= Text,"eTerry Config 1",DigIn3Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigIn5Txt		= Text,"eTerry Config 2",DigIn4Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigIn6Txt		= Text,"Manual E-Box 1",DigIn5Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigIn7Txt		= Text,"Manual E-Box 2",DigIn6Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigIn8Txt		= Text,"Manual Trav 3 1",DigIn7Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigIn9Txt		= Text,"Manual Trav 3 2",DigIn8Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigIn10Txt		= Text,"eTerry Config 3",DigIn9Txt,0, 20, 85,15,1,0,0x0,Black,-
+$DigI11Txt		= Text,"eTerry Config 4",DigIn10Txt,0, 20, 85,15,1,0,0x0,Black,-

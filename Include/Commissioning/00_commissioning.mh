@@ -1,0 +1,117 @@
+/*
+** In this file the desired commissioning function can be defined.
+** To switch on this section the macro ENABLE_COMMISSIONING must be set as 1. Afterwards
+** the desired routine can be started with the macro COMMISSONING_ROUTINE.
+** Further functions can also be added.
+*/
+
+#define	ETERRY_OUTPUTS			1
+#define	ETERRY_INPUTS			2
+#define	ENCODER_CHECK			3
+#define	WHEELDRIVE_TUNING		10
+#define	ACTDRIVE_TUNING			11
+#define	ACT_HOMING				12
+
+#define COMMISSONING_ROUTINE	ETERRY_OUTPUTS
+
+long curkprop, curkint, curkilim;
+long velkprop, velkint, velkilim;
+long kprop, kint, kder, kilim;
+
+void printPosition(void);
+void setControllerParam(long masterAxis, long slaveAxis);
+
+#include "01_ETerry_Outputs.mh"
+#include "02_ETerry_Inputs.mh"
+#include "03_ETerry_Encoder_Check.mh"
+#include "10_ETerry_WheelDrive.mh"
+#include "11_ETerry_ActDrive.mh"
+//#include "12_ETerry_HomingAct.mh"
+
+
+
+long startCommissioning(void)
+{
+	setup_MiniMACS6_DS402_Slave();
+	Delay(10);
+	// Clear old amp errors
+	AmpErrorClear(AXALL);
+
+	setupWheelDrive();
+	setupActDrive();
+
+	Delay(10);
+	print("Start commissioning loop ..");
+	#if (COMMISSONING_ROUTINE == ETERRY_OUTPUTS)
+		eTerry_outputs();
+	#elif(COMMISSONING_ROUTINE == ETERRY_INPUTS)
+		eTerry_inputs();
+	#elif(COMMISSONING_ROUTINE == ENCODER_CHECK)
+		eTerry_encoders();
+	#elif(COMMISSONING_ROUTINE == WHEELDRIVE_TUNING)
+		eTerry_wheelDrive_tune();
+	#elif(COMMISSONING_ROUTINE == ACTDRIVE_TUNING)
+		eTerry_actDrive_tune();
+	#elif(COMMISSONING_ROUTINE == ACT_HOMING)
+		eTerry_actDrive_home();
+	#endif
+
+
+    return(1);
+}
+
+void printPosition(void)
+{
+	print("WHEEL_DRIVE_1:		", Apos(WHEEL_DRIVE_1));
+	print("WHEEL_DRIVE_2:		", Apos(WHEEL_DRIVE_2));
+	print("WHEEL_DRIVE_3:		", Apos(WHEEL_DRIVE_3));
+}
+
+void setControllerParam(long masterAxis, long slaveAxis)
+{
+	long i;
+	// current controller
+	if(	curkprop	!=HWAMP_PARAM(masterAxis,HWAMP_CURKPROP) ||
+		curkint		!=HWAMP_PARAM(masterAxis,HWAMP_CURKINT) ||
+		curkilim	!=HWAMP_PARAM(masterAxis,HWAMP_CURKILIM))
+	{
+		print("setNewCurrentControllerParam");
+		curkprop 	= HWAMP_PARAM(masterAxis,HWAMP_CURKPROP);
+		curkint 	= HWAMP_PARAM(masterAxis,HWAMP_CURKINT);
+		curkilim 	= HWAMP_PARAM(masterAxis,HWAMP_CURKILIM);
+
+		miniM6_SetupCurrentPIControl(MIM6_BUSID_TRAV_1, slaveAxis, curkprop,  curkint, curkilim);
+		miniM6_SetupCurrentPIControl(MIM6_BUSID_TRAV_3, slaveAxis, curkprop,  curkint, curkilim);
+	}
+	// velocity controller
+	if(	velkprop	!=HWAMP_PARAM(masterAxis,HWAMP_VELKPROP) ||
+		velkint		!=HWAMP_PARAM(masterAxis,HWAMP_VELKINT) ||
+		velkilim	!=HWAMP_PARAM(masterAxis,HWAMP_VELKILIM))
+	{
+		print("setNewVelocityControllerParam");
+		velkprop 	= HWAMP_PARAM(masterAxis,HWAMP_VELKPROP);
+		velkint 	= HWAMP_PARAM(masterAxis,HWAMP_VELKINT);
+		velkilim 	= HWAMP_PARAM(masterAxis,HWAMP_VELKILIM);
+
+		miniM6_SetupVelocityPIControl(MIM6_BUSID_TRAV_1, slaveAxis, velkprop,  velkint, velkilim);
+		miniM6_SetupVelocityPIControl(MIM6_BUSID_TRAV_3, slaveAxis, velkprop,  velkint, velkilim);
+	}
+	// position controller
+	if(	kprop	!=AXE_PARAM(masterAxis,KPROP)||
+		kint	!=AXE_PARAM(masterAxis,KINT)||
+		kder	!=AXE_PARAM(masterAxis,KDER)||
+		kilim	!=AXE_PARAM(masterAxis,KILIM))
+	{
+		print("setNewPositionControllerParam");
+		kprop 		= AXE_PARAM(masterAxis,KPROP);
+		kint 		= AXE_PARAM(masterAxis,KINT);
+		kder 		= AXE_PARAM(masterAxis,KDER);
+		kilim 		= AXE_PARAM(masterAxis,KILIM);
+
+		miniM6_SetupPositionPIDControl(MIM6_BUSID_TRAV_1, slaveAxis, kprop,  kint, kder, kilim);
+		miniM6_SetupPositionPIDControl(MIM6_BUSID_TRAV_3, slaveAxis, kprop,  kint, kder, kilim);
+	}
+
+}
+
+

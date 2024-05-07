@@ -1,0 +1,364 @@
+#include <SysDef.mh>
+/*********************************************************************
+** Mechanical Specification
+**
+** In this file all mechanical constants are defined.
+**
+** ----------------------------------------------------------------------
+** Kinematics Structure
+**
+**							-| Drive 1
+**						   /
+**						  /
+**						 /
+**		Drive 2|- - - - O    • <-- (Center point between Actuator 1 and 3)
+**						 \
+**						  \
+**						   \
+**							-| Drive 3
+**
+** ----------------------------------------------------------------------
+** Angel References
+**
+**                             +90°
+**                              |
+**                              |
+**							-|  • - - 0°
+**		   -90°		       /    |
+**			|			  /     |
+**			|			 /     -90°
+**	 0° - - •  |- - - - O
+**		    |			 \     +90°
+**		    |			  \     |
+**		   +90°		       \    |
+**							-|  • - - 0°
+**                              |
+**                              |
+**                             -90°
+**
+**  • = Origin of local coordinate system, aka pivot point of actuation drive joint (Offset to the right respectifely the left in scematics above)
+**
+** ----------------------------------------------------------------------
+** Hole pattern for different configurations (example below for traverse 3, vertically mirrored for traverse 1)
+**
+**   Config 1       Config 2        Config 3        Config 4		Config 99 (vehicle folded)
+**
+**   • O O O		O • O O			O O • O 		O O O •				     O O O O
+**
+**    •ooo 			 o•oo			 oo•o			 ooo•			 	      oooo
+**
+**
+**  • = Bolt
+**  O = Hole without bolt
+**
+**	Config 1 = 32,737°; Config 2 = 42°; Config 3 = 51°; Config 4 = 60°, Config 99 = 180°
+**
+** ----------------------------------------------------------------------
+** Actuation Drive = Steering Motor
+** Wheel Drive = Motor for wheel movement
+** 1/100 mm = 0,001 cm = 10^-5 m
+**
+*********************************************************************/
+
+
+/*********************************************************************
+** Mechanical Specification - Dimmensions
+**
+*********************************************************************/
+
+#define MECH_TRAVERSE_1				125000		// Length of the traverse 1, [1/100 mm] *UPDATED*
+#define MECH_TRAVERSE_2				120000		// Length of the traverse 2, [1/100 mm] *UPDATED*
+#define MECH_TRAVERSE_3				125000		// Length of the traverse 3, [1/100 mm] *UPDATED*
+
+// #define MECH_DIST_ACTUATOR_1		427		// Distance actuator - centre of running track, [1/100 mm] *OBSOLETE* --> pivot point of joint equals pivot point of wheel
+// #define MECH_DIST_ACTUATOR_2		427		// Distance actuator - centre of running track, [1/100 mm] *OBSOLETE* --> pivot point of joint equals pivot point of wheel
+// #define MECH_DIST_ACTUATOR_3		427		// Distance actuator - centre of running track, [1/100 mm] *OBSOLETE* --> pivot point of joint equals pivot point of wheel
+
+#define MECH_DIST_JNT_TRAV_1		17850		// Distance shaft joint - middle of traverse 1, [1/100 mm] *UPDATED*
+#define MECH_DIST_JNT_TRAV_2		30000		// Distance shaft joint - middle of traverse 2, [1/100 mm] *UPDATED*
+#define MECH_DIST_JNT_TRAV_3		17850		// Distance shaft joint - middle of traverse 3, [1/100 mm] *UPDATED*
+
+#define MECH_BOUND_ACTUATOR_1		(18000/2)		// Software limit actuator perpendicular to the shaft, [1/100 °] --> see "20210203_E-Terry_Documentation_000_Draft" Figure 10
+#define MECH_BOUND_ACTUATOR_2		(18000/2)		// Software limit actuator perpendicular to the shaft, [1/100 °] --> see "20210203_E-Terry_Documentation_000_Draft" Figure 10
+#define MECH_BOUND_ACTUATOR_3		(18000/2)		// Software limit actuator perpendicular to the shaft, [1/100 °] --> see "20210203_E-Terry_Documentation_000_Draft" Figure 10
+
+#define MECH_WHEEL_DIAMETER			635		// Diameter of wheel 1 to 3, [mm] *UPDATED*
+#define MECH_ACT_GEAR_FKT			1.136
+
+/*********************************************************************
+** Mechanical Specification - Configuration
+**
+*********************************************************************/
+
+#define MECH_CONFIG_0					0			// Every Configuration that is not covered by Config 1, 2, 3, 4, 99 is assigned to Configuration 0 (e.g. loose bolts can result in config other than 1, 2, 3, 4, 99)
+#define MECH_CONFIG_1					1			// Configuration 1, vehicle extended with hole pattern according to scematics above
+#define MECH_CONFIG_2					2			// Configuration 2, vehicle extended with hole pattern according to scematics above
+#define MECH_CONFIG_3					3			// Configuration 3, vehicle extended with hole pattern according to scematics above
+#define MECH_CONFIG_4					4			// Configuration 4, vehicle extended with hole pattern according to scematics above
+#define MECH_CONFIG_FOLD				99			// Configuration fold, vehicle folded with hole pattern according to scematics above
+
+
+//config. hall sensors default values
+#define HALL_TRAV_1_2_CONFIG_1_MIN              1900 //dummy hall readings
+#define HALL_TRAV_1_2_CONFIG_1_MAX              2700 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_1_MIN              7500 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_1_MAX              9500 //dummy hall readings
+#define HALL_TRAV_1_2_CONFIG_2_MIN              55 //dummy hall readings
+#define HALL_TRAV_1_2_CONFIG_2_MAX              55 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_2_MIN              55 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_2_MAX              55 //dummy hall readings
+#define HALL_TRAV_1_2_CONFIG_3_MIN              55 //dummy hall readings
+#define HALL_TRAV_1_2_CONFIG_3_MAX              55 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_3_MIN              55 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_3_MAX              55 //dummy hall readings
+#define HALL_TRAV_1_2_CONFIG_4_MIN              31700 //dummy hall readings
+#define HALL_TRAV_1_2_CONFIG_4_MAX              31900 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_4_MIN              9000 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_4_MAX              14000 //dummy hall readings
+#define HALL_TRAV_1_2_CONFIG_FOLD_MIN              20800 //dummy hall readings
+#define HALL_TRAV_1_2_CONFIG_FOLD_MAX              31000 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_FOLD_MIN              12000 //dummy hall readings
+#define HALL_TRAV_1_3_CONFIG_FOLD_MAX              23000 //dummy hall readings
+
+//original
+// #define HOME_TRAV_1_CONFIG_1    1250
+// #define HOME_TRAV_2_CONFIG_1    28550
+// #define HOME_TRAV_3_CONFIG_1    3786
+
+//test
+#define HOME_TRAV_1_CONFIG_1    12700
+#define HOME_TRAV_2_CONFIG_1    28300
+#define HOME_TRAV_3_CONFIG_1    3897
+
+#define HOME_TRAV_1_CONFIG_2    55
+#define HOME_TRAV_2_CONFIG_2    28300
+#define HOME_TRAV_3_CONFIG_2    55
+
+#define HOME_TRAV_1_CONFIG_3    55
+#define HOME_TRAV_2_CONFIG_3    28300
+#define HOME_TRAV_3_CONFIG_3    55
+
+#define HOME_TRAV_1_CONFIG_4    9800
+#define HOME_TRAV_2_CONFIG_4    28300
+#define HOME_TRAV_3_CONFIG_4    7100
+
+
+// config 1: angle definition of actuators for rotation (related to "Angel References" scematic above)
+	#define MECH_CONFIG_1_ALPHA_1_3				 6547		// Angle between traverse 1 & 3, [1/100 °] *UPDATED*
+
+	//rotation around center point
+	#define MECH_CONF_1_ROT_CENTR_ACT_1			 3274		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_1_ROT_CENTR_ACT_2			 0			// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_1_ROT_CENTR_ACT_3			-3274		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+
+	// 	//rotation around center point
+	// #define MECH_CONF_1_ROT_CENTR_ACT_1			 3274 + 200 		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	// #define MECH_CONF_1_ROT_CENTR_ACT_2			 0			// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	// #define MECH_CONF_1_ROT_CENTR_ACT_3			-3274 + 200 		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+
+	//rotation around wheel point
+	#define MECH_CONF_1_ROT_WHEEL_1_3_ACT_1		 9000		// Angle actuator for rotate in center point [1/100 °] Rotation around center point between Actuator 1 and 3  *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_1_3_ACT_2		 0			// Angle actuator for rotate in center point [1/100 °] Rotation around center point between Actuator 1 and 3  *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_1_3_ACT_3		-9000		// Angle actuator for rotate in center point [1/100 °] Rotation around center point between Actuator 1 and 3  *UPDATED*
+
+	#define MECH_CONF_1_ROT_WHEEL_1_ACT_1		 0			// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_1_ACT_2		 1938		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_1_ACT_3		-9000		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+	#define MECH_CONF_1_ROT_WHEEL_2_ACT_1		 1938		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_2_ACT_2		 0			// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_2_ACT_3		-1938		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+	#define MECH_CONF_1_ROT_WHEEL_3_ACT_1		 9000		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_3_ACT_2		-1983		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_3_ACT_3		 0			// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+
+// config 1: path length related to the pivot point - diameter
+	#define MECH_CONF_1_PATH_ROT_WHEEL_1_3		3051		// Diameter of the circle for wheel point rotation around wheel 1_3(mean value of diameter ACT_1_3 - ACT_1/ACT_3 and ACT_1_3 - ACT_2)*UPDATED*
+	#define MECH_CONF_1_PATH_ROT_WHEEL_1		3921		// Diameter of the circle for wheel point rotation around wheel 1(mean value of diameter ACT_1 - ACT_2 and ACT_1 - ACT_2)*UPDATED*
+	#define MECH_CONF_1_PATH_ROT_WHEEL_2		4838		// Diameter of the circle for wheel point rotation around wheel 2(mean value of diameter ACT_2 - ACT_1 and ACT_2 - ACT_3)*UPDATED*
+	#define MECH_CONF_1_PATH_ROT_WHEEL_3		3921		// Diameter of the circle for wheel point rotation around wheel 3(mean value of diameter ACT_3 - ACT_1 and ACT_3 - ACT_2)*UPDATED*
+
+
+// config 1: velocity factors
+	#define MECH_CONF_1_ROT_WHEEL_1_3_VELF_ACT_1	49			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 750,906 mm --> 0,492 (mean value 1525,31 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_1_3_VELF_ACT_2	151			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2299,717 mm --> 1,507 (mean value 1525,31 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_1_3_VELF_ACT_3	49			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 750,906 mm --> 0,492 (mean value 1525,31 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_1_ROT_WHEEL_1_VELF_ACT_1		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed
+	#define MECH_CONF_1_ROT_WHEEL_1_VELF_ACT_2		123			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2419,206 mm --> 1,234 (mean value 1960,51 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_1_VELF_ACT_3		77			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 1501,812 mm --> 0,766 (mean value 1960,51 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_1_ROT_WHEEL_2_VELF_ACT_1		100			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2419,206 mm --> 1,0 (mean value 2419,206 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_2_VELF_ACT_2		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed
+	#define MECH_CONF_1_ROT_WHEEL_2_VELF_ACT_3		100			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2419,206 mm --> 1,0 (mean value 2419,206 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_1_ROT_WHEEL_3_VELF_ACT_1		77			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 1501,812 mm --> 0,766 (mean value 1960,51 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_3_VELF_ACT_2		123			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2419,206 mm --> 1,234 (mean value 1960,51 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_1_ROT_WHEEL_3_VELF_ACT_3		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed
+
+	#define MECH_CONF_1_ROT_WHEEL_BOOST_F			50			// Boost factor to remote control [1/100] -> 0 No Speed *UPDATED*
+	#define MECH_CONF_1_ROT_CENTR_BOOST_F			50			// Boost factor to remote control [1/100] -> 0 No Speed *UPDATED*
+
+//config 2: angle definition of actuators for rotation (related to "Angel References" scematic above)
+	#define MECH_CONFIG_2_ALPHA_1_3				 8400		// Angle between traverse 1 & 3, [1/100 °] *UPDATED*
+
+	//rotation around center point
+	#define MECH_CONF_2_ROT_CENTR_ACT_1			 4200		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_CENTR_ACT_2			 0			// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_CENTR_ACT_3			-4200		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+
+	//rotation around wheel point
+	#define MECH_CONF_2_ROT_WHEEL_1_3_ACT_1		 9000		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_1_3_ACT_2		 0			// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_1_3_ACT_3		-9000		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+
+	#define MECH_CONF_2_ROT_WHEEL_1_ACT_1		 0			// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_1_ACT_2		 2406		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_1_ACT_3		 -9000		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+	#define MECH_CONF_2_ROT_WHEEL_2_ACT_1		 2406		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_2_ACT_2		 0			// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_2_ACT_3		-2406		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+	#define MECH_CONF_2_ROT_WHEEL_3_ACT_1		 9000		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_3_ACT_2		-2406		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_3_ACT_3		 0			// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+// config 2: path length related to the pivot point - diameter
+	#define MECH_CONF_2_PATH_ROT_WHEEL_1_3		3109		// Diameter of the circle for wheel point rotation around wheel 1_3(mean value of diameter ACT_1_3 - ACT_1/ACT_3 and ACT_1_3 - ACT_2)*UPDATED*
+	#define MECH_CONF_2_PATH_ROT_WHEEL_1		4214		// Diameter of the circle for wheel point rotation around wheel 1(mean value of diameter ACT_1 - ACT_2 and ACT_1 - ACT_2)*UPDATED*
+	#define MECH_CONF_2_PATH_ROT_WHEEL_2		4748		// Diameter of the circle for wheel point rotation around wheel 2(mean value of diameter ACT_2 - ACT_1 and ACT_2 - ACT_3)*UPDATED*
+	#define MECH_CONF_2_PATH_ROT_WHEEL_3		4214		// Diameter of the circle for wheel point rotation around wheel 3(mean value of diameter ACT_3 - ACT_1 and ACT_3 - ACT_2)*UPDATED*
+
+// config 2: velocity factors
+	#define MECH_CONF_2_ROT_WHEEL_1_3_VELF_ACT_1	59			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 920,088 mm --> 0,592 (mean value 1554,370 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_1_3_VELF_ACT_2	141			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2188,651 mm --> 1,408 (mean value 1554,370 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_1_3_VELF_ACT_3	59			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 920,088 mm --> 0,592 (mean value 1554,370 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_2_ROT_WHEEL_1_VELF_ACT_1		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed // *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_1_VELF_ACT_2		113			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2374,185 mm  --> 1,127 (mean value 2107,18 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_1_VELF_ACT_3		87			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 1840,175 mm  --> 0,873 (mean value 2107,18 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_2_ROT_WHEEL_2_VELF_ACT_1		100			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2374,185 mm  --> 1,0 (mean value 2374,185 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_2_VELF_ACT_2		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed // *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_2_VELF_ACT_3		100			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2374,185 mm  --> 1,0 (mean value 2374,185 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_2_ROT_WHEEL_3_VELF_ACT_1		87			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 1840,175 mm  --> 0,873 (mean value 2107,18 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_3_VELF_ACT_2		113			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2374,185 mm  --> 1,127 (mean value 2107,18 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_2_ROT_WHEEL_3_VELF_ACT_3		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed // *UPDATED*
+
+	#define MECH_CONF_2_ROT_WHEEL_BOOST_F			50			// Boost factor to remote control [1/100] -> 0 No Speed *UPDATED*
+	#define MECH_CONF_2_ROT_CENTR_BOOST_F			50			// Boost factor to remote control [1/100] -> 0 No Speed *UPDATED*
+
+
+
+// config 3: angle definition of actuators for rotation (related to "Angel References" scematic above)
+	#define MECH_CONFIG_3_ALPHA_1_3				 10200	// Angle between traverse 1 & 3, [1/100 °] *UPDATED*
+
+	//rotation around center point
+	#define MECH_CONF_3_ROT_CENTR_ACT_1			 5100	// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_3_ROT_CENTR_ACT_2			 	0	// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_3_ROT_CENTR_ACT_3			-5100	// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+
+	//rotation around wheel point
+	#define MECH_CONF_3_ROT_WHEEL_1_3_ACT_1		 9000	// Angle actuator for rotate in center point [1/100 °] Rotation around center point between Actuator 1 and 3 *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_1_3_ACT_2		 	0	// Angle actuator for rotate in center point [1/100 °] Rotation around center point between Actuator 1 and 3 *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_1_3_ACT_3		-9000	// Angle actuator for rotate in center point [1/100 °] Rotation around center point between Actuator 1 and 3 *UPDATED*
+
+	#define MECH_CONF_3_ROT_WHEEL_1_ACT_1		 0		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_1_ACT_2		 2861	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_1_ACT_3		-9000	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+	#define MECH_CONF_3_ROT_WHEEL_2_ACT_1		 2861	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_2_ACT_2		 	0	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_2_ACT_3		-2861	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+	#define MECH_CONF_3_ROT_WHEEL_3_ACT_1		 9000	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_3_ACT_2		-2861	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_3_ACT_3		 0		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+
+// config 3: path length related to the pivot point - diameter
+	#define MECH_CONF_3_PATH_ROT_WHEEL_1_3		3121	// Diameter of the circle for wheel point rotation around wheel 1_3(mean value of diameter ACT_1_3 - ACT_1/ACT_3 and ACT_1_3 - ACT_2)*UPDATED*
+	#define MECH_CONF_3_PATH_ROT_WHEEL_1		4446	// Diameter of the circle for wheel point rotation around wheel 1 (mean value of diameter ACT_1 - ACT_3 and ACT_1 - ACT_2)*UPDATED*
+	#define MECH_CONF_3_PATH_ROT_WHEEL_2		4631	// Diameter of the circle for wheel point rotation around wheel 2 (mean value of diameter ACT_2 - ACT_3 and ACT_2 - ACT_1)*UPDATED*
+	#define MECH_CONF_3_PATH_ROT_WHEEL_3		4446	// Diameter of the circle for wheel point rotation around wheel 3 (mean value of diameter ACT_3 - ACT_1 and ACT_3 - ACT_2)*UPDATED*
+
+
+// config 3: velocity factors
+	#define MECH_CONF_3_ROT_WHEEL_1_3_VELF_ACT_1	68			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 1065,266 mm --> 0,683 (mean value 1560,638 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_1_3_VELF_ACT_2	132			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2056,011 mm --> 1,317 (mean value 1560,638 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_1_3_VELF_ACT_3 	68			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 1065,266 mm --> 0,683 (mean value 1560,638 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_3_ROT_WHEEL_1_VELF_ACT_1		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed // *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_1_VELF_ACT_2		104			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2315,593 mm  --> 1,041 (mean value 2223,062 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_1_VELF_ACT_3		96			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2130,531 mm  --> 0,958 (mean value 2223,062 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_3_ROT_WHEEL_2_VELF_ACT_1		100			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2315,593 mm  --> 1,0 (mean value 2315,593 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_2_VELF_ACT_2		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed // *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_2_VELF_ACT_3		100			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2315,593 mm  --> 1,0 (mean value 2315,593 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_3_ROT_WHEEL_3_VELF_ACT_1		96			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2130,531 mm  --> 0,958 (mean value 2223,062 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_3_VELF_ACT_2		104			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2315,593 mm  --> 1,041 (mean value 2223,062 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_3_ROT_WHEEL_3_VELF_ACT_3		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed // *UPDATED*
+
+	#define MECH_CONF_3_ROT_WHEEL_BOOST_F			50			// Boost factor to remote control [1/100] -> 0 No Speed *UPDATED*
+	#define MECH_CONF_3_ROT_CENTR_BOOST_F			50			// Boost factor to remote control [1/100] -> 0 No Speed *UPDATED*
+
+
+
+// config 4: angle definition of actuators for rotation (related to "Angel References" scematic above)
+	#define MECH_CONFIG_4_ALPHA_1_3				12000 		// Angle between traverse 1 & 3, [1/100 °] *UPDATED*
+
+	//rotation around center point
+	#define MECH_CONF_4_ROT_CENTR_ACT_1			 6000		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_4_ROT_CENTR_ACT_2			 0			// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+	#define MECH_CONF_4_ROT_CENTR_ACT_3			-6000		// Angle actuator for rotate in center point [1/100 °] *UPDATED*
+
+	//rotation around wheel point
+	#define MECH_CONF_4_ROT_WHEEL_1_3_ACT_1		 9000		// Angle actuator for rotate in center point [1/100 °] Rotation around center point between Actuator 1 and 3 *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_1_3_ACT_2		 	0		// Angle actuator for rotate in center point [1/100 °] Rotation around center point between Actuator 1 and 3 *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_1_3_ACT_3		-9000		// Angle actuator for rotate in center point [1/100 °] Rotation around center point between Actuator 1 and 3 *UPDATED*
+
+	#define MECH_CONF_4_ROT_WHEEL_1_ACT_1		 0		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_1_ACT_2		 3316	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_1_ACT_3		-9000	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+	#define MECH_CONF_4_ROT_WHEEL_2_ACT_1		 3316		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_2_ACT_2		 0			// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_2_ACT_3		-3316		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+	#define MECH_CONF_4_ROT_WHEEL_3_ACT_1		 9000	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_3_ACT_2		-3316	// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_3_ACT_3		 0		// Angle actuator for rotate over wheel point [1/100 °] *UPDATED*
+
+
+// config 4: path length related to the pivot point - diameter
+	#define MECH_CONF_4_PATH_ROT_WHEEL_1_3		3090	// Diameter of the circle for wheel point rotation around wheel 1_3(mean value of diameter ACT_1_3 - ACT_1/ACT_3 and ACT_1_3 - ACT_2)*UPDATED*
+	#define MECH_CONF_4_PATH_ROT_WHEEL_1		4618	// Diameter of the circle for wheel point rotation around wheel 1 (mean value of diameter ACT_1 - ACT_3 and ACT_1 - ACT_2)*UPDATED*
+	#define MECH_CONF_4_PATH_ROT_WHEEL_2		4486	// Diameter of the circle for wheel point rotation around wheel 2 (mean value of diameter ACT_2 - ACT_1 and ACT_2 - ACT_3)*UPDATED*
+	#define MECH_CONF_4_PATH_ROT_WHEEL_3		4618	// Diameter of the circle for wheel point rotation around wheel 3 (mean value of diameter ACT_3 - ACT_1 and ACT_3 - ACT_2)*UPDATED*
+
+
+
+// config 4: velocity factors
+	#define MECH_CONF_4_ROT_WHEEL_1_3_VELF_ACT_1	77			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 1187,907 mm --> 0,77 (mean value 1545,1 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_1_3_VELF_ACT_2	123			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 1902,293 mm --> 1,23 (mean value 1545,1 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_1_3_VELF_ACT_3	77			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 1187,907 mm --> 0,77 (mean value 1545,1 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_4_ROT_WHEEL_1_VELF_ACT_1		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed // *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_1_VELF_ACT_2		103			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2242,731 mm --> 1,029 (mean value 2309,27 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_1_VELF_ACT_3		97			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2375,814 mm --> 0,972 (mean value 2309,27  mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_4_ROT_WHEEL_2_VELF_ACT_1		100			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2242,731 mm --> 1,0 (mean value 2242,731 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_2_VELF_ACT_2		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed // *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_2_VELF_ACT_3		100			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2242,731 mm --> 1,0 (mean value 2242,731 mm --> 1,0) *UPDATED*
+
+	#define MECH_CONF_4_ROT_WHEEL_3_VELF_ACT_1		103			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2375,814 mm --> 1,029 (mean value 2309,27 mm --> 1,0) *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_3_VELF_ACT_2		97			// Velocity factor to vehicle path [1/100] -> 0 No Speed // 2242,731 mm --> 0,972 (mean value 2309,27  mm --> 1,0) *UPDATED*
+	#define MECH_CONF_4_ROT_WHEEL_3_VELF_ACT_3		0			// Velocity factor to vehicle path [1/100] -> 0 No Speed // *UPDATED*
+
+	#define MECH_CONF_4_ROT_WHEEL_BOOST_F			50			// Boost factor to remote control [1/100] -> 0 No Speed *UPDATED*
+	#define MECH_CONF_4_ROT_CENTR_BOOST_F			50			// Boost factor to remote control [1/100] -> 0 No Speed *UPDATED*

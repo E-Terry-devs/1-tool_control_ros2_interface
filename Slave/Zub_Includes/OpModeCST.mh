@@ -1,0 +1,103 @@
+/*********************************************************************
+**
+**               CanOpen Operational Mode: Cyclic Synchronous Torque Mode
+**               ----------------------------------
+*/
+
+#define DEBUG_CST
+
+SmState DriveModeCST
+{
+    SIG_INIT            = DriveModeCST_Init;
+    SIG_EXIT            = DriveModeCST_Exit;
+    SIG_IDLE            = DriveModeCST_Idle;
+}
+
+/*********************************************************************
+**
+**               DriveModeCST State Functions
+**               ---------------------------------
+*/
+
+long DriveModeCST_Init(long id, long signal, long event[], long data[])
+{
+	print("Axis ",id,": Enter state OperationEnabled - CST");
+	// The type of rempent in a cycle mode must not be jerk limited. Otherwise the motor may stop in
+	// an unfavorable manner when the application is aborted.
+	data[DATA_CSxOldRampType]	= AXE_PARAM(id,RAMPTYPE);
+	AXE_PARAM(id,RAMPTYPE)		= 0;
+
+	// The HWAMP mode must be switched between CST and csv mode. The old value must be restored after exiting.
+	data[DATA_CSxOldHwampMode]	= HWAMP_PARAM(id,HWAMP_MODE);
+	HWAMP_PARAM(id,HWAMP_MODE)	= HWAMP_MODE_POS_CUR;
+
+	// In this mode, there must be no tracking error monitoring.
+	data[DATA_CSxOldPoserr]		= AXE_PARAM(id,POSERR);
+	AXE_PARAM(id,POSERR)		= 0;
+
+   	// Disable PFG
+    AxisControl(id, USERREFCUR);
+
+	 // Drive is in state operation enables and follows the target and setpoint values of the control device
+	 // In the event of a following error, the mode is exited
+
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 1;
+
+    #ifdef DEBUG_CST
+    	if(id==0)
+    	{
+			RecordIndex(	AXE_PROCESS_INDEX(id,REG_USERREFCUR),
+							HWAMP_PROCESS_INDEX(id,PO_HWAMP_CURRENT),
+							0x01607100,	// Target Torque
+							0x01607600,	// Motor rated torque
+							0x01607700	// Torque actual value
+							);
+			RecordDest(DYNMEM);
+			RecordStart(0);
+		}
+    #endif
+
+}
+long DriveModeCST_Exit(long id, long signal, long event[], long data[])
+{
+	print("Axis ",id,": Exit state OperationEnabled - CST");
+	// The type of rempent in a cycle mode must not be jerk limited. Otherwise the motor may stop in
+	// an unfavorable manner when the application is aborted.
+	AXE_PARAM(id,RAMPTYPE)		= data[DATA_CSxOldRampType];
+
+	// The HWAMP mode must be switched between CST and csv mode. The old value must be restored after exiting.
+	HWAMP_PARAM(id,HWAMP_MODE)	= data[DATA_CSxOldHwampMode];
+
+    // Enable PFG, Reset pos Control
+    AxisControl(id, OFF);
+    AxisControl(id, ON);
+
+    // When leaving the mode, the tracking error monitoring can be switched on again.
+	AXE_PARAM(id,POSERR)		= data[DATA_CSxOldPoserr];
+
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 0;     // Drive does not follow the target value
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT11] = 0;
+
+    #ifdef DEBUG_CST
+    	RecordStop(0,0);
+    #endif
+}
+
+long DriveModeCST_Idle(long id, long signal, long event[], long data[])
+{
+	// Internal max current warning, no limit active - not DS402 conform
+	if(ZBCO_MAXVEL(id)<ZBCO_ACTVEL(id))
+		data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT11] = 1;
+	else
+		data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT11] = 0;
+
+    /*
+    ** It is important that we do NOT "handle" the Idle event here.  This allows
+    ** the Idle event to be passed up the superstate chain so that all the normal
+    ** Idle processing gets a chance to run.
+    */
+    return(SmNotHandled);
+}
+
+
+

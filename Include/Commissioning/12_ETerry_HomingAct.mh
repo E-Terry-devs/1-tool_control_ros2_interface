@@ -1,0 +1,114 @@
+#define PRINT_POSITION 0
+
+
+long eTerry_actDrive_home(void)
+{
+	long i;
+	long retval1 = 0;
+	long retval2 = 0;
+	long homingStateAct_1 = 0;
+	long homingStateAct_3 = 0;
+	long dist = 360*100/4; 		// [10°]
+	long offset, offset2, offset3;
+
+	offset = scaleHomingHall(28550, AI_CNF_HOME_TRAV_2);
+	offset2 = scaleHomingHall(1250, AI_CNF_HOME_TRAV_1);
+	offset3 = scaleHomingHall(3736, AI_CNF_HOME_TRAV_3);
+	print("eTerry_actDrive_tune");
+
+
+	#if PRINT_POSITION
+		InterruptSetup(PERIOD, printPosition,2000);
+	#endif
+
+	curkprop 	= HWAMP_PARAM(ACTUATING_DRIVE_2,HWAMP_CURKPROP);
+	curkint 	= HWAMP_PARAM(ACTUATING_DRIVE_2,HWAMP_CURKINT);
+	curkilim 	= HWAMP_PARAM(ACTUATING_DRIVE_2,HWAMP_CURKILIM);
+	kprop 		= AXE_PARAM(ACTUATING_DRIVE_2,KPROP);
+	kint 		= AXE_PARAM(ACTUATING_DRIVE_2,KINT);
+	kder 		= AXE_PARAM(ACTUATING_DRIVE_2,KDER);
+	kilim 		= AXE_PARAM(ACTUATING_DRIVE_2,KILIM);
+
+	AXE_PARAM(ACTUATING_DRIVE_1,POSERR)=4096*10;
+	AXE_PARAM(ACTUATING_DRIVE_2,POSERR)=4096*10;
+	AXE_PARAM(ACTUATING_DRIVE_3,POSERR)=4096*10;
+
+	print("Open Break and wait 5000 ms - if not open do a user abort");
+	DO_BREAK_ACT_DRIVE_1(1);
+	DO_BREAK_ACT_DRIVE_2(1);
+	DO_BREAK_ACT_DRIVE_3(1);
+
+	Delay(10000);
+	print("Enable Axis");
+	AxisControl(ACTUATING_DRIVE_1,ON,ACTUATING_DRIVE_2,ON,ACTUATING_DRIVE_3,ON);
+	Vel(AXALL,40);
+	//DefOrigin(ACTUATING_DRIVE_1, ACTUATING_DRIVE_2, ACTUATING_DRIVE_3);
+	print("AI_CNF_HOME_TRAV_1:	", AI_CNF_HOME_TRAV_1);
+
+	//AxisPosRelStart(ACTUATING_DRIVE_2, offset);
+
+	//AxisWaitReached(ACTUATING_DRIVE_2);
+	//print("Apos: ", Apos(ACTUATING_DRIVE_2));
+	AXE_PARAM(ACTUATING_DRIVE_2, HOME_TYPE) 		= 37;
+	ZBCO_HOMEOFFSET(ACTUATING_DRIVE_2)				= offset; // write in uu
+	print("Get homing offset in qc: ", AXE_PARAM(ACTUATING_DRIVE_2, HOME_OFFSET));
+
+
+	//AXE_PARAM(ACTUATING_DRIVE_2, HOME_VEL)  		= 40;
+	SdoWrite( MIM6_BUSID_TRAV_1, 0x6098 + MINIMACS6_AXOFFSET*ACTUATING_DRIVE_1, 	0,   37);	// Select "Home at actual position"
+	ZBCO_HOMEOFFSET(ACTUATING_DRIVE_1)				= offset2; // write in uu
+	print("Get homing offset in qc: ", AXE_PARAM(ACTUATING_DRIVE_1, HOME_OFFSET));
+
+	SdoWrite( MIM6_BUSID_TRAV_1, 0x607C + MINIMACS6_AXOFFSET*ACTUATING_DRIVE_1, 	0,  AXE_PARAM(ACTUATING_DRIVE_1, HOME_OFFSET));   	// Set homing offset to [uu]
+
+
+//	if(retval != 1)
+//	{
+//		retval = miniM6_AxisHomingStart(ACTUATING_DRIVE_1, MIM6_BUSID_TRAV_1, MINIMACS6_OP_CSP, homingStateAct_1);
+//		print("return", retval);
+//	}
+	retval1 = miniM6_AxisHomingStart(ACTUATING_DRIVE_1, MIM6_BUSID_TRAV_1, MINIMACS6_OP_CSP, homingStateAct_1);
+	print("return", retval1);
+
+	SdoWrite( MIM6_BUSID_TRAV_3, 0x6098 + MINIMACS6_AXOFFSET*ACTUATING_DRIVE_3, 	0,   37);	// Select "Home at actual position"
+	ZBCO_HOMEOFFSET(ACTUATING_DRIVE_3)				= offset3; // write in uu
+	print("Get homing offset in qc: ", AXE_PARAM(ACTUATING_DRIVE_3, HOME_OFFSET));
+
+	SdoWrite( MIM6_BUSID_TRAV_3, 0x607C + MINIMACS6_AXOFFSET*ACTUATING_DRIVE_3, 	0,  AXE_PARAM(ACTUATING_DRIVE_3, HOME_OFFSET));   	// Set homing offset to [uu]
+
+
+//	if(retval != 1)
+//	{
+//		retval = miniM6_AxisHomingStart(ACTUATING_DRIVE_1, MIM6_BUSID_TRAV_1, MINIMACS6_OP_CSP, homingStateAct_1);
+//		print("return", retval);
+//	}
+	retval2 = miniM6_AxisHomingStart(ACTUATING_DRIVE_3, MIM6_BUSID_TRAV_3, MINIMACS6_OP_CSP, homingStateAct_3);
+	print("return", retval2);
+
+
+
+	print("Apos: ", Apos(ACTUATING_DRIVE_2));
+	AxisHomeStart(ACTUATING_DRIVE_2);
+	print(AxisHomeStatus(ACTUATING_DRIVE_2));
+	while(AxisHomeStatus(ACTUATING_DRIVE_2) != 100);
+	print(AxisHomeStatus(ACTUATING_DRIVE_2));
+	print("Apos: ", Apos(ACTUATING_DRIVE_2));
+
+	AxisPosAbsStart(ACTUATING_DRIVE_1, 0, ACTUATING_DRIVE_2, 0, ACTUATING_DRIVE_3, 0);
+
+	AxisWaitReached(ACTUATING_DRIVE_1, ACTUATING_DRIVE_2, ACTUATING_DRIVE_3);
+		print("Apos: ", Apos(ACTUATING_DRIVE_2));
+
+	//AxisPosAbsStart(ACTUATING_DRIVE_1, 0);
+	//AxisWaitReached(ACTUATING_DRIVE_1);
+		print("Apos: ", Apos(ACTUATING_DRIVE_1));
+
+
+	//AxisPosAbsStart(ACTUATING_DRIVE_3, 0);
+	//AxisWaitReached(ACTUATING_DRIVE_3);
+		print("Apos: ", Apos(ACTUATING_DRIVE_3));
+
+
+
+    return(1);
+}

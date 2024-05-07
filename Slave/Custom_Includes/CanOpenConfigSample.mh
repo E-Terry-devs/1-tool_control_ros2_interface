@@ -1,0 +1,146 @@
+//---------------------------------------------------------------------------------------------------
+// CanOpenConfigSample.mi (Sample Application)
+//
+// This file contains the configuration definitions for the zub CanOpenStatemachine.
+// These particular definitions are for the Sample application.
+
+//----------------------------------------------
+// ZBCOS_CNF_CMDCOUNTERS
+//----------------------------------------------
+// Use of command counters (not standard CanOpen)
+// If the next define is not zero, then the COS uses commandcounters to detect a new command.
+// This is useful if we need to be very fast so that the commanding software won't wait for the
+// status to find out if a command was executed or not.
+// The commandcounters are axis-specific, so the following version is only valid for a maximum of
+// four axes.
+// If not zero, then the number has to be the sysvar index where commandcounters are stored i.e. 0x01220101
+
+//#define ZBCOS_CNF_CMDCOUNTERS       0x01220101
+#define ZBCOS_CNF_CMDCOUNTERS       0
+
+//----------------------------------------------
+// ZBCOS_CNF_POSITION_OPTCODE
+//----------------------------------------------
+// The option code for positioning mode is defined here.
+// The following options are available at the moment. They can be added.
+// ZBCOS_POSOPT_POSRESPONSE_AUTO_READY  -  the start bit (NewSetPoint) in the command word is reset automatically as soon as possible
+// ZBCOS_POSOPT_POSRESPONSE_AUTO_TARGET -  the newsetp bit in the command word is reset automatically when target is reached
+
+#define ZBCOS_CNF_POSITION_OPTCODE  0
+
+//----------------------------------------------
+// ZBCOS_CNF_AUTO_SWITCH_ON
+//----------------------------------------------
+// If the state machine should change automatically from SWITCHONDIS to READYTOSWITCH (Trans. 2), then
+// it is defined here.
+// This is not CanOpen compliant, but it allows entering into operation enable more quickly. Some applications want that.
+// 0 - no automatic switching
+// 1 - automatic switching enabled
+
+#define ZBCOS_CNF_AUTO_SWITCH_ON    0
+
+
+
+/*
+** If AppE0 and AppE1 modes are being used, then define the following
+** using your own function names for "funcname".  Otherwise, leave them
+** undefined.  You must implement each "funcname" as a standard state
+** function with the following prototype:
+**
+**    long funcname(long id, long signal, long[] event, long[] data);
+*/
+
+// #define ZBCOS_MODOP_APP_E0_FUNCTION   funcname
+// #define ZBCOS_MODOP_APP_E1_FUNCTION   funcname
+
+
+/*********************************************************************
+** CanOpenApplInit
+**
+**    This routine should run application initializations are necessary.
+** If the initialization completes successfully,  then 0 should be returned.
+**
+** Return codes:  0     - Initializations succeeded.
+**                Other - Initialization failed.
+*/
+
+long CanOpenApplInit()
+{
+    long res;
+
+    print("Application Initialization");
+
+    OutB(0, 0);
+    OutB(1, 0);
+    OutB(2, 0);
+
+    res = 0;
+
+    return(res);
+}
+
+/*********************************************************************
+** CanOpenSelfTest
+**
+**    This routine should run whatever self-tests and initializations
+** are necessary.  If the tests and initialization complete successfully,
+** then 0 should be returned.  This will cause the state machine to
+** transition to the "Not ready to switch on" state.  If the tests or
+** initialization fail, then the user must decide, based on the specific
+** end application, how to handle it.  Possibilities include executing
+** the SmStop command to terminate the state machine, executing the Exit
+** command to stop the entire Aposs program, simply repeating the tests
+** and initializations, or some other solution.
+**
+** Return codes:  0     - Self-test and initializations succeeded.
+**                Other - Test and initialization failed.
+*/
+
+long CanOpenSelfTest(long id)
+{
+    long res;
+
+    print("Axis ",id,": Self-test & Initialization");
+
+    /*
+    ** If necessary, define the default values for the CanOpen-relevant SDOs.
+    */
+
+    // preset the wanted position option code (see above)
+    ZBCO_POSITIONOPTCODE(id) = ZBCOS_CNF_POSITION_OPTCODE;
+
+    // CanOpen state machine parameters (default)
+    ZBCOS_AXES_SDO(id, ZBCOI_TARGETPOS)  =  0;           // Target Position
+    ZBCOS_AXES_SDO(id, ZBCOI_PROFILEVEL) =  270000;      // Profile Velocity uu/sec         270000 = 1000 rpm with encoder 4000 resolution
+    ZBCOS_AXES_SDO(id, ZBCOI_PROFILEACC) =  700000;      // Profile Acceleration uu/sec2
+    ZBCOS_AXES_SDO(id, ZBCOI_PROFILEDEC) =  700000;      // Profile Deceleration uu/sec2
+    // Initialize home parameters
+    ZBCOS_AXES_SDO(id, ZBCOI_HOMEVEL)    =   170000;     // Home Velocity uu/sec
+    ZBCOS_AXES_SDO(id, ZBCOI_HOMEACC)    =   600000;     // Home Acceleration uu/sec
+    ZBCOS_AXES_SDO(id, ZBCOI_HOMEMODE)   =       10;     // Home Type
+
+    res = 0;
+
+    return(res);
+}
+
+/*********************************************************************
+** CanOpenTestOpMode
+**
+**    This routine should test for any custom user-specific operational
+** modes that have been implemented.  These custom operational modes
+** should be  implemented in one or more ".mi" include files and the
+** "CanOpenOpModes.mh" include file should be modified to inlcude them.
+**
+** Return codes:  SmTrans(->xxx) - Operation mode found.
+**                SmNotHandled   - Operation code not recognized.
+*/
+
+long CanOpenTestOpMode(long opmode)
+{
+//  if (opmode == ZBCOS_MODOP_xxx) then return(SmTrans(->DriveModeXxx)) endif
+//  if (opmode == ZBCOS_MODOP_yyy) then return(SmTrans(->DriveModeYyy)) endif
+//  if (opmode == ZBCOS_MODOP_zzz) then return(SmTrans(->DriveModeZzz)) endif
+
+    return(SmNotHandled);
+}

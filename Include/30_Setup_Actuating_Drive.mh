@@ -1,0 +1,89 @@
+/*********************************************************************
+** Include SDK
+*********************************************************************/
+#include "SDK\SDK_ApossC.mc"
+#include "motor\IDX56M_B7CFC7F7E927_48V.mh"
+
+void setupActDrive()
+{
+	long i;
+
+	#if SIMULATE_ACT_DRIVE_1
+		sdkSetupAxisSimulation(ACTUATING_DRIVE_1);
+	#else
+
+	#endif
+	#if SIMULATE_ACT_DRIVE_2
+		sdkSetupAxisSimulation(ACTUATING_DRIVE_2);
+	#else
+		setupIDX56M_B7CFC7F7E927_Inc(ACTUATING_DRIVE_2,ACTUATING_DRIVE_2,1);
+	#endif
+	#if SIMULATE_ACT_DRIVE_3
+		sdkSetupAxisSimulation(ACTUATING_DRIVE_3);
+	#else
+
+	#endif
+	i = ACTUATING_DRIVE_1;
+	while (1)
+	{
+		print("Setup Actuating Drive with Axis ", i);
+		// Movement parameters for the axis
+		sdkSetupAxisMovementParam(	i,
+									ACTUATING_DRIVE_VELRES,
+									ACTUATING_DRIVE_MAX_RPM,
+									ACTUATING_DRIVE_RAMPTYPE,
+									ACTUATING_DRIVE_RAMPMIN,
+									ACTUATING_DRIVE_JERKMIN
+									);
+
+
+
+		// Definition of the user units
+		sdkSetupAxisUserUnits(		i,
+									ACTUATING_DRIVE_POSENCREV,
+									ACTUATING_DRIVE_POSENCQC,
+									ACTUATING_DRIVE_POSFACT_Z,
+									ACTUATING_DRIVE_POSFACT_N,
+									ACTUATING_DRIVE_FEEDREV,
+									ACTUATING_DRIVE_FEEDDIST
+									);
+
+		// Position control setup
+		sdkSetupPositionPIDControlExt( 	i,
+										0,
+										0,
+										0,
+										ACTUATING_DRIVE_KILIM,
+										ACTUATING_DRIVE_KILIMTIME,
+										ACTUATING_DRIVE_BANDWIDTH,
+										0,
+										0,
+										0
+										);
+		AXE_PARAM(i,POSERR) = ACTUATING_DRIVE_TRACKERR;
+
+		if(i==ACTUATING_DRIVE_1)
+			i = ACTUATING_DRIVE_2;
+		else if(i==ACTUATING_DRIVE_2)
+			i= ACTUATING_DRIVE_3;
+		else
+			break;
+	}
+	// controller loop settings traverse 2
+	sdkSetupCurrentPIControl(ACTUATING_DRIVE_2, ACTUATING_DRIVE_CURKPROP,  ACTUATING_DRIVE_CURKINT, ACTUATING_DRIVE_CURKILIM);
+	sdkSetupVelocityPIControl(ACTUATING_DRIVE_2, ACTUATING_DRIVE_VELKPROP,  ACTUATING_DRIVE_VELKINT, ACTUATING_DRIVE_VELKILIM);
+	sdkSetupPositionPIDControl(ACTUATING_DRIVE_2,ACTUATING_DRIVE_KPROP, ACTUATING_DRIVE_KINT, ACTUATING_DRIVE_KDER);
+
+	// controller loop setting traverse 1
+	miniM6_SetupCurrentPIControl(MIM6_BUSID_TRAV_1, S_AX_ACTUATING_DRIVE, ACTUATING_DRIVE_CURKPROP,  ACTUATING_DRIVE_CURKINT, ACTUATING_DRIVE_CURKILIM);
+	miniM6_SetupVelocityPIControl(MIM6_BUSID_TRAV_1, S_AX_ACTUATING_DRIVE, ACTUATING_DRIVE_VELKPROP,  ACTUATING_DRIVE_VELKINT, ACTUATING_DRIVE_VELKILIM);
+	miniM6_SetupPositionPIDControl(MIM6_BUSID_TRAV_1, S_AX_ACTUATING_DRIVE, ACTUATING_DRIVE_KPROP, ACTUATING_DRIVE_KINT, ACTUATING_DRIVE_KDER, ACTUATING_DRIVE_KILIMTIME);
+    miniM6_SetupConstants(MIM6_BUSID_TRAV_1, S_AX_ACTUATING_DRIVE, IDX56M_B7CFC7F7E927_MAXCUR, IDX56M_B7CFC7F7E927_MAX_RPM);
+	// controller loop settings travers 3
+	miniM6_SetupCurrentPIControl(MIM6_BUSID_TRAV_3, S_AX_ACTUATING_DRIVE, ACTUATING_DRIVE_CURKPROP,  ACTUATING_DRIVE_CURKINT, ACTUATING_DRIVE_CURKILIM);
+	miniM6_SetupVelocityPIControl(MIM6_BUSID_TRAV_3, S_AX_ACTUATING_DRIVE, ACTUATING_DRIVE_VELKPROP,  ACTUATING_DRIVE_VELKINT, ACTUATING_DRIVE_VELKILIM);
+	miniM6_SetupPositionPIDControl(MIM6_BUSID_TRAV_3, S_AX_ACTUATING_DRIVE, ACTUATING_DRIVE_KPROP, ACTUATING_DRIVE_KINT, ACTUATING_DRIVE_KDER, ACTUATING_DRIVE_KILIMTIME);
+	miniM6_SetupConstants(MIM6_BUSID_TRAV_3, S_AX_ACTUATING_DRIVE, IDX56M_B7CFC7F7E927_MAXCUR, IDX56M_B7CFC7F7E927_MAX_RPM);
+
+}
+

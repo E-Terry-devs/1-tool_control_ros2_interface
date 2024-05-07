@@ -1,0 +1,71 @@
+#define PRINT_POSITION 0
+void updateActDriveParam(void);
+
+long eTerry_actDrive_tune(void)
+{
+	long i;
+	long dist = 360*100/50; 		// [10°]
+	print("eTerry_actDrive_tune");
+
+
+	#if PRINT_POSITION
+		InterruptSetup(PERIOD, printPosition,2000);
+	#endif
+
+	curkprop 	= HWAMP_PARAM(ACTUATING_DRIVE_2,HWAMP_CURKPROP);
+	curkint 	= HWAMP_PARAM(ACTUATING_DRIVE_2,HWAMP_CURKINT);
+	curkilim 	= HWAMP_PARAM(ACTUATING_DRIVE_2,HWAMP_CURKILIM);
+	kprop 		= AXE_PARAM(ACTUATING_DRIVE_2,KPROP);
+	kint 		= AXE_PARAM(ACTUATING_DRIVE_2,KINT);
+	kder 		= AXE_PARAM(ACTUATING_DRIVE_2,KDER);
+	kilim 		= AXE_PARAM(ACTUATING_DRIVE_2,KILIM);
+
+	AXE_PARAM(ACTUATING_DRIVE_1,POSERR)=4096*10;
+	AXE_PARAM(ACTUATING_DRIVE_2,POSERR)=4096*10;
+	AXE_PARAM(ACTUATING_DRIVE_3,POSERR)=4096*10;
+
+	print("Open Break and wait 5000 ms - if not open do a user abort");
+	DO_BREAK_ACT_DRIVE_1(1);
+	Delay(2000);
+	DO_BREAK_ACT_DRIVE_2(1);
+	Delay(2000);
+	DO_BREAK_ACT_DRIVE_3(1);
+
+	Delay(5000);
+	print("Enable Axis");
+	AxisControl(ACTUATING_DRIVE_1,ON,ACTUATING_DRIVE_2,ON,ACTUATING_DRIVE_3,ON);
+	Delay(100);
+	//InterruptSetup(PERIOD, updateActDriveParam,1000);
+	Vel(AXALL, 25);
+	//Acc(ACTUATING_DRIVE_2,40);
+	//Dec(ACTUATING_DRIVE_2,40);
+
+
+	while(1)
+	{
+		AxisPosRelStart(	ACTUATING_DRIVE_1,dist,
+							ACTUATING_DRIVE_2,dist,
+							ACTUATING_DRIVE_3,dist);
+		AxisWaitReached(	ACTUATING_DRIVE_1);
+		Delay(2000);
+		AxisPosRelStart(	ACTUATING_DRIVE_1,-dist,
+							ACTUATING_DRIVE_2,-dist,
+							ACTUATING_DRIVE_3,-dist);
+		AxisWaitReached(	ACTUATING_DRIVE_1);
+		Delay(2000);
+		/*AxisPosRelStart(	ACTUATING_DRIVE_1,dist);
+		AxisWaitReached(	ACTUATING_DRIVE_1);
+		Delay(2000);
+		AxisPosRelStart(	ACTUATING_DRIVE_1,-dist);
+		AxisWaitReached(	ACTUATING_DRIVE_1);
+		Delay(2000);*/
+	}
+
+
+
+    return(1);
+}
+void updateActDriveParam(void)
+{
+	setControllerParam(ACTUATING_DRIVE_2, S_AX_ACTUATING_DRIVE);
+}

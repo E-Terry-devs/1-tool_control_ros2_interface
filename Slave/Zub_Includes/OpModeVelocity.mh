@@ -1,0 +1,93 @@
+/*********************************************************************
+**
+**               CanOpen Operational Mode: Velocity
+**               ----------------------------------
+*/
+
+SmState DriveModeVelocity
+    {
+    SIG_INIT            = DriveModeVelocity_Init;
+    SIG_IDLE            = DriveModeVelocity_Idle;
+
+    SmState VelocityModeRunning
+        {
+        SIG_ENTRY           = { AxisCvelStart(id);
+                                data[DATA_State] = STATE_M_VELOCITY_RUN;
+                                return(SmHandled);
+                              }
+        SIG_IDLE            = { Acc(id,  ZBCO_INTERNALACC(id));
+                                Dec(id,  ZBCO_INTERNALDEC(id));
+                                // Currently, Cvel overwrites the internal should value, so when writing an invalid value, it is directly overwritten with the maximum value.
+                                if( data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT11])
+                                	Cvel(id, AXE_PARAM(id,VELMAX));
+                                else
+                                	Cvel(id, ZBCO_INTERNALTARGVEL(id));
+
+                                return(SmNotHandled); // important to allow handling in other states
+                              }
+        SIG_EXIT			= {AxisCvelStop(id);}
+        SIG_HALT            = SmTrans(VelocityModeHalted);
+        }
+    SmState VelocityModeHalted
+        {
+        SIG_ENTRY           = { data[DATA_State] = STATE_M_VELOCITY_HALT;
+                                return(SmHandled);
+                              }
+        SIG_NOHALT          = SmTrans(VelocityModeRunning);
+        }
+    }
+
+/*********************************************************************
+**
+**               DriveModeVelocity State Functions
+**               ---------------------------------
+*/
+
+long DriveModeVelocity_Init(long id, long signal, long event[], long data[])
+{
+    print("Axis ",id,": Enter state OperationEnabled - VelocityMode");
+
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT13] = 0;      // Not used.
+
+    Acc(id,  ZBCO_INTERNALACC(id));
+    Dec(id,  ZBCO_INTERNALDEC(id));
+
+
+    if(data[DATA_OldCommand] & ZBCOS_CMDM_OP_HALT) {
+      return(SmTrans(->VelocityModeHalted));
+    } else {
+      return(SmTrans(->VelocityModeRunning));
+    }
+}
+
+long DriveModeVelocity_Idle(long id, long signal, long event[], long data[])
+{
+    /*
+    ** Check to see if we have reached the target velocity and if the target
+    ** velocity is 0.  It is okay to do these tests whenever we are anywhere
+    ** in the Velocity Mode state (i.e. including the substates).
+    */
+
+    data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = (SYS_PFG_VFIN(id) == SYS_PFG_VCMD(id));
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT11] = (ZBCO_INTERNALTARGVEL(id) >= AXE_PARAM(id,VELMAX));
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = (SYS_PFG_VCMD(id) == 0);
+
+    /*
+    ** Check for changes in HALT bit of command word and fire signals if necessary
+    */
+
+    if(data[ DATA_PosCmdEdges] & ZBCOS_CMDM_OP_HALT) {
+        SmPost(id, SIG_HALT);
+    }
+    if(data[ DATA_NegCmdEdges] & ZBCOS_CMDM_OP_HALT) {
+        SmPost(id, SIG_NOHALT);
+    }
+
+    /*
+    ** It is important that we do NOT "handle" the Idle event here.  This allows
+    ** the Idle event to be passed up the superstate chain so that all the normal
+    ** Idle processing gets a chance to run.
+    */
+    return(SmNotHandled);
+}
+

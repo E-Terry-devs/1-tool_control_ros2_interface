@@ -1,0 +1,225 @@
+#include "..\SDK\SDK_ApossC.mc"
+
+// Axis settings
+#define WD80_754962_ENCRES 				4096				// Resolution of the encoder for position feed back in increments (quadcounts)
+#define WD80_754962_ENC_LATCHTYPE 		0					// Defines the latch type: -
+#define WD80_754962_ENC_LATCHPARAM 		0					// -
+#define WD80_754962_ENC_LATCHSLOPE 		HWLATCH_SLOPE_RISING// Defines the slope of the trigger signal (Default 1)
+
+
+#define	WD80_754962_ENC_SSI_CLK_FREQ	    4000000					// Clock frequency of the SSI encoder (Hz)
+#define	WD80_754962_ENC_FAST_UPDATE			1						// fastUpdate @b 1: The encoder is updated with the current controller update rate (24 kHz on MiniMACS6)
+#define	WD80_754962_ENC_DATLEN			    12						// Databit length of endat position
+#define	WD80_754962_ENC_IS_BINARY			1						// 1 if data coding is binary otherwise it is grey coded.
+#define	WD80_754962_ENC_I_POS				0						// Define an indexposition
+long    WD80_754962_ENC_ALIGN_POS =			192;//192 dp02, 106 dp01, 230 dp03						// Offset of the encoder position to the electrical position
+
+#define	WD80_754962_BRUSHLESS				1						// Mode of aligment: For brushless motors
+#define WD80_754962_ALIGN_CUR				5000					// Current for the alignment function in mA
+
+
+
+#define WD80_754962_CONTROLMODE			HWAMP_MODE_POS_VEL_CUR		// Define control typ
+#define WD80_754962_POLEPAIRS			10
+#define WD80_754962_ELPOL		     	-1						// Number of pole pairs
+#define WD80_754962_CONTCUR				15000						// Nomial continious current allowed in mA
+#define WD80_754962_MAXCUR				WD80_754962_CONTCUR*1.25						// Maximal current allowed in mA
+#define WD80_754962_THERMAL_TIME		12800						// Thermal time constant of the winding ms
+
+#define WD80_754962_CURBRAKE 			1000
+
+
+// Just default settings. These parameters ar overwrite by the master application
+
+#define WD80_754962_MAX_RPM				1680			// Maximum velocity in RPM
+#define WD80_754962_CURKPROP			500					// Proportional factor of current controller
+#define WD80_754962_CURKINT				10						// Integral factor of current controller
+#define WD80_754962_CURKILIM			0x7FFF					// Integral limit of current controller
+#define WD80_754962_VELKPROP			12000					// Proportional factor of velocity controller - not used
+#define WD80_754962_VELKINT				10						// Integral factor of velocity controller - not used
+#define WD80_754962_VELKILIM			0x7FFF					// Integral limit of velocity controller - not used
+
+
+#define WD80_754962_VELRES				1000					 // Velocity resolution, Scaling used for the velocity and acceleration/deceleration commands
+#define WD80_754962_RAMPTYPE			RAMPTYPE_JERKLIMITED	// Defines the ramptype
+#define WD80_754962_RAMPMIN				1000					// Maximum acceleration
+#define WD80_754962_JERKMIN				1000					// Minimum time (ms) required before reaching the maximum acceleration
+#define WD80_754962_POSERR				WD80_754962_ENCRES*20
+
+#define WD80_754962_DIRECTION		        1
+
+#define	WD80_754962_KPROP				0						// Proportional value for PID position control loop
+#define	WD80_754962_KINT				0						// Integral value for PID position control loop
+#define	WD80_754962_KDER				0						// Derivative value for PID position control loop
+#define	WD80_754962_KILIM				0					// Limit value for the integral sum of the PID position control loop
+#define	WD80_754962_KILIMTIME			0						// Time used to increase or decrease the integral limit
+#define	WD80_754962_BANDWIDTH			1000					// Bandwidth within which the PID filter is active. 1000 equals to 100% velocity setpoint
+#define	WD80_754962_FFVEL				1000					// Velocity Feed forward
+#define	WD80_754962_KFFACC				100						// Acceleration Feed forward
+#define	WD80_754962_KFFDEC				0						// Deceleration Feed Forward
+
+#define	WD80_754962_POSENCREV			1						// Number of revolutions of the motor
+#define	WD80_754962_POSENCQC			WD80_754962_ENCRES		// Number of quadcounts in POSENCREV revolutions
+#define	WD80_754962_POSFACT_Z			42						// Number of revolutions of the input shaft
+#define	WD80_754962_POSFACT_N			1						// Number of revolutions of the output shaft in POSFACT_Z revolutions of the input shaft
+#define	WD80_754962_FEEDREV				1
+#define MECH_WHEEL_DIAMETER_            635					// Number of revolutions of the gear box output shaft
+#define	WD80_754962_FEEDDIST			MECH_WHEEL_DIAMETER_*3.14						// Distance travelled (in user units) in FEEDREV revolutions of the gear box output shaft
+
+
+
+long setupWD80_754962_Inc(long axisNo, long encPort, long direction)
+{
+    long flag_check = 0;
+    long checkMotorAlignment;
+
+
+    while(flag_check < 1)
+    {
+		print("setupWD80_754962_Inc");
+		// Amplifier setup
+		HWAMP_PARAM(axisNo, HWAMP_COMMTYPE) = HWAMP_COMMTYPE_PMSM_TWIN; 	    // Set motor type
+		Delay(500);
+		HWAMP_PARAM(axisNo, HWAMP_ELPOL) 	= -1; 								// encoder polarity vs. electrical polarity:
+		Delay(500);
+		HWAMP_PARAM(axisNo, HWAMP_MODE)     = WD80_754962_CONTROLMODE;         	// Set controller priciple
+		Delay(500);
+		HWAMP_PARAM(axisNo, HWAMP_POLES)    = WD80_754962_POLEPAIRS;     		// Number of pole pairs
+		Delay(500);
+		HWAMP_PARAM(axisNo, HWAMP_MAXCUR)   = WD80_754962_MAXCUR;  				// Max current in mA
+		Delay(500);
+		HWAMP_PARAM(axisNo, HWAMP_ENCRES)   = WD80_754962_ENCRES;  				// Given in qc
+		Delay(500);
+		HWAMP_PARAM(axisNo, HWAMP_MAXRPM)   = WD80_754962_MAX_RPM;  			// Given in RPM
+		Delay(500);
+		HWHALL_PARAM(axisNo, HWHALL_MODE)   = 0;
+		Delay(500);
+
+		// Encoder setup
+		sdkSetupAbsSSIEncoder	(	axisNo,
+									encPort,
+									WD80_754962_ENCRES,
+									WD80_754962_ENC_SSI_CLK_FREQ,
+									WD80_754962_ENC_FAST_UPDATE,
+									WD80_754962_ENC_DATLEN,
+									WD80_754962_ENC_IS_BINARY,
+									WD80_754962_ENC_I_POS
+									);
+		Delay(1000);
+
+		// Set the direction of the axis
+		sdkSetupAxisDirection( 		axisNo,
+									direction);
+        Delay(1000);
+		// Just default settings bellow. These parameters ar overwrite by the master application
+
+		// Current control setup
+		sdkSetupCurrentPIControl( 	axisNo,
+									WD80_754962_CURKPROP,
+									WD80_754962_CURKINT,
+									WD80_754962_CURKILIM
+									);
+	    Delay(1000);
+		// Velocity control setup
+		sdkSetupVelocityPIControl( 	axisNo,
+									WD80_754962_VELKPROP,
+									WD80_754962_VELKINT,
+									WD80_754962_VELKILIM
+									);
+		Delay(1000);
+		// Movement parameters for the axis
+		sdkSetupAxisMovementParam(	axisNo,
+									WD80_754962_VELRES,
+									WD80_754962_MAX_RPM,
+									WD80_754962_RAMPTYPE,
+									WD80_754962_RAMPMIN,
+									WD80_754962_JERKMIN
+									);
+        Delay(1000);
+		// Position control setup
+		sdkSetupPositionPIDControlExt( 	axisNo,
+										WD80_754962_KPROP,
+										WD80_754962_KINT,
+										WD80_754962_KDER,
+										WD80_754962_KILIM,
+										WD80_754962_KILIMTIME,
+										WD80_754962_BANDWIDTH,
+										WD80_754962_FFVEL,
+										WD80_754962_KFFACC,
+										WD80_754962_KFFDEC
+										);
+		Delay(1000);
+		// Definition of the user units
+		sdkSetupAxisUserUnits(		axisNo,
+									WD80_754962_POSENCREV,
+									WD80_754962_POSENCQC,
+									WD80_754962_POSFACT_Z,
+									WD80_754962_POSFACT_N,
+									WD80_754962_FEEDREV,
+									WD80_754962_FEEDDIST
+									);
+		Delay(1000);
+		print(WD80_754962_ENC_ALIGN_POS);
+		if(WD80_754962_ENC_ALIGN_POS==0)
+		{
+            print("alligning");
+			DigOutput(1, 1);
+			DigOutput(2, 1);
+			print("The first alignment is open loop and is used in commissioning to detect the offset of the encoder position to the electrical position.");
+			print("");
+
+			checkMotorAlignment =	sdkMotorAlignment(
+									0,
+									WD80_754962_BRUSHLESS,
+									WD80_754962_MAXCUR,
+									WD80_754962_ALIGN_CUR);
+
+			if(checkMotorAlignment<0)
+			{
+				print("Sorry alignement didn't work we exit");
+				Exit(0);
+			}
+			else
+			{
+				print("");
+				print("Alignement posiston offset: ", HWAMP_PARAM(0, HWAMP_POSEL_OFFSET));
+				print("The determined alingment offset can now be entered.");
+				print("The value must be specified in the macro: ");
+				print("#define WD80_754962_ALIGN_POS ", HWAMP_PARAM(0, HWAMP_POSEL_OFFSET));
+				WD80_754962_ENC_ALIGN_POS = HWAMP_PARAM(0, HWAMP_POSEL_OFFSET);
+				print(WD80_754962_ENC_ALIGN_POS);
+				//Exit(0);
+				DigOutput(1, 1);
+				DigOutput(2, 1);
+
+				Delay(1000);
+
+				DigOutput(1, 0);
+				DigOutput(2, 0);
+			}
+		}
+		else
+		{
+		    print("setting up");
+		    print("value placed in the amplifier");
+		    print(WD80_754962_ENC_ALIGN_POS);
+			sdkSetMotorAlignmentOffset( axisNo,
+										-1,
+										WD80_754962_ENC_ALIGN_POS
+										);
+		}
+		VIRTAMP_PARAM(axisNo,VIRTAMP_I2TLIMIT)	=	(WD80_754962_CONTCUR/1000)*(WD80_754962_CONTCUR/1000)*1000;		// I*I*1000
+		VIRTAMP_PARAM(axisNo,VIRTAMP_I2TTIME)	= 	WD80_754962_THERMAL_TIME;
+		AXE_PARAM(axisNo,POSERR)				= 	WD80_754962_POSERR;
+		flag_check = flag_check + 1;
+
+		DigOutput(1, 1);
+		DigOutput(2, 1);
+
+		Delay(1000);
+
+		DigOutput(1, 0);
+		DigOutput(2, 0);
+    }
+	return(1);
+}

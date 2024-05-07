@@ -1,0 +1,89 @@
+/**
+*	@file		SDK_Amplifier_MiniMACS6_DS402_Slave.mh
+*	@brief		Declaration of the MiniMACS6 DS402 slave function.
+*	$Revision: 224 $
+*
+*/
+
+#pragma once
+
+long miniM6_PDOMapping(long busId);
+long miniM6_SetupCanBusModuleSlow(long busId, long busmod, long digoutMod, long axisNo1, long axisNo2);
+long miniM6_SetupCanBusModuleFast(long busId, long busmod, long axisNo1, long axisNo2);
+long miniM6_SetupCnfSdoParam(long busId);
+
+long miniM6_SetupVirtAxisWheelDrive(long axis, long busmodSlow, long busmodFast,long maxRpm);
+long miniM6_SetupVirtAxisActDrive(long axis, long busmodSlow, long busmodFast);
+long miniM6_SetupVirtIO();
+
+long miniM6_SetupCurrentPIControl(long busId, long axis, long curkprop, long curkint, long curkilim);
+long miniM6_SetupVelocityPIControl(long busId, long axis, long velkprop, long velkint, long velkilim);
+long miniM6_SetupPositionPIDControl(long busId, long axis, long kprop, long kint, long kder, long kilim);
+
+long miniM6_AxisHomingStart(long axis, long slaveAxis, long busId, long operationMode, long &homingState);
+long miniM6_SetupConstants(long busId, long axis, long maxcurrent, long maxrpm);
+
+
+#define MIM6_BUSID_TRAV_1		1		// The CAN drive busId of the MiniMACS6
+#define MIM6_BUSID_TRAV_3		100003	// The CAN drive busId of the MiniMACS6
+
+#define MIM6_BUSMOD1_TRAV_1		0		// The CAN bus module for the MiniMACS6 slow traffic
+#define MIM6_BUSMOD2_TRAV_1		1		// The CAN bus module for the MiniMACS6 fast traffic
+#define MIM6_BUSMOD1_TRAV_3		2		// The CAN bus module for the MiniMACS6 slow traffic
+#define MIM6_BUSMOD2_TRAV_3		3		// The CAN bus module for the MiniMACS6 fast traffic
+
+#define MIMI6_BUSMOD_SYNC_TIME	2		// SYNC Time [ms] for the CAN communication
+#define MIMI6_BUSMOD_SLOW_SYNC	5		// SYNC Time [f] of MIMI6_BUSMOD_SYNC_TIME for the slow bus modul
+#define MIMI6_BUSMOD_FAST_SYNC	1		// SYNC Time [f] of MIMI6_BUSMOD_SYNC_TIME for the fast bus modul
+
+#define MIM6_DO_MODULE_TRAV_1	1		// Virtual digital output module number
+#define MIM6_DO_MODULE_TRAV_3	2		// Virtual digital output module number
+
+#define MIM6_DI_MODULE_TRAV_1	1		// Virtual digital input module number
+#define MIM6_DI_MODULE_TRAV_3	2		// Virtual digital input module number
+
+#define MIM6_AI1_MODULE_TRAV_1	4		// Virtual analog input module number
+#define MIM6_AI2_MODULE_TRAV_1	5		// Virtual analog input module number
+#define MIM6_AI1_MODULE_TRAV_3	6		// Virtual analog input module number
+#define MIM6_AI2_MODULE_TRAV_3	7		// Virtual analog input module number
+
+#define S_AX_WHEEL_DRVE			0		// 	Axis module number DS402 - Steerig Drive
+#define S_AX_ACTUATING_DRIVE	2		// 	Axis module number DS402 - Steerig Drive
+
+/*********************************************************************
+** OBJECT DICTIONARY - MiniMACS6 DS402 Slave
+*********************************************************************/
+#define MINIMACS6_AXOFFSET									0x0800
+#define	MINIMACS6_RECEIVE_PDO_1_PARAMETER					0x1400
+#define	MINIMACS6_RECEIVE_PDO_2_PARAMETER					0x1401
+#define	MINIMACS6_RECEIVE_PDO_3_PARAMETER					0x1402
+#define	MINIMACS6_RECEIVE_PDO_4_PARAMETER					0x1403
+#define	MINIMACS6_RECEIVE_PDO_1_MAPPING						0x1600
+#define	MINIMACS6_RECEIVE_PDO_2_MAPPING						0x1601
+#define	MINIMACS6_RECEIVE_PDO_3_MAPPING						0x1602
+#define	MINIMACS6_RECEIVE_PDO_4_MAPPING						0x1603
+#define	MINIMACS6_TRANSMIT_PDO_1_PARAMETER					0x1800
+#define	MINIMACS6_TRANSMIT_PDO_2_PARAMETER					0x1801
+#define	MINIMACS6_TRANSMIT_PDO_3_PARAMETER					0x1802
+#define	MINIMACS6_TRANSMIT_PDO_4_PARAMETER					0x1803
+#define	MINIMACS6_TRANSMIT_PDO_1_MAPPING					0x1A00
+#define	MINIMACS6_TRANSMIT_PDO_2_MAPPING					0x1A01
+#define	MINIMACS6_TRANSMIT_PDO_3_MAPPING					0x1A02
+#define	MINIMACS6_TRANSMIT_PDO_4_MAPPING					0x1A03
+#define MINIMACS6_SYNC_MANAGER_2_PDO_ASSIGNMENT				0
+#define MINIMACS6_SYNC_MANAGER_3_PDO_ASSIGNMENT				0
+#define	MINIMACS6_CONTROLWORD								0x6040
+#define	MINIMACS6_STATUSWORD								0x6041
+#define	MINIMACS6_MODES_OF_OPERATION						0x6060
+		#define MINIMACS6_OP_PPM	0x01	// Profile Position Mode
+		#define MINIMACS6_OP_PVM	0x03	// Profile Velocity Mode
+		#define MINIMACS6_OP_HMM	0x06	// Homing Mode
+		#define MINIMACS6_OP_CSP	0x08	// Cyclic Synchronous Position Mode
+		#define MINIMACS6_OP_CSV	0x09	// Cyclic Synchronous Velocity Mode
+		#define MINIMACS6_OP_CST	0x0A	// Cyclic Synchronous Torque Mode
+#define	MINIMACS6_MODES_OF_OPERATION_DISPLAY				0x6061
+
+#define ZBCOI_AXESOFFSET       		0x00080000
+#define ZBCOI_HOMEOFFSET       		0x01607C00
+#define ZBCO_HOMEOFFSET(axis)      	Sysvar[ZBCOI_HOMEOFFSET       + ZBCOI_AXESOFFSET *(axis)]
+

@@ -1,0 +1,81 @@
+/*********************************************************************
+** DIM Array - USB Parameter
+*********************************************************************/
+#define USBINPUT_ARR_LENGTH			10	// Array Length
+#define USBINPUT_INIT_ARRAY			0	// Array Index, if 0 -> Array must be init first
+#define USBINPUT_SAVE_PARAMETER		1	// Array Index
+#define USBINPUT_CONST_VELOCITY		2	// Array Index
+	#define USBINPUT_CONST_VELOCITY_MAX		((double)WHEEL_DRIVE_MAX_RPM*MECH_WHEEL_DIAMETER*3.14)/1000
+
+
+
+long dim steeringCurve[100];
+long dim boostCurve[100];
+long dim usbParameter[USBINPUT_ARR_LENGTH];
+wchar dim printArray[100000];
+
+
+/*********************************************************************
+** State Machine Declarations
+*********************************************************************/
+
+SmMachine ETerry;
+SmMachine LedControl;
+SmMachine ActuatingBreakControl;
+SmMachine WheelBrakeControl;
+//SmMachine Sm_Ethernet;
+
+/*********************************************************************
+** Global Variables
+*********************************************************************/
+long    gHomeDone;
+long	gFoldingActive;
+long 	gMotorRCEnable;
+long 	gMotorManEnable;
+long 	gMotorSlowModeOn;
+long 	gActBreakOpen[3];
+long 	gWheelBrakeOpen[3];
+
+double 	gVelocityVehicle;
+double 	gAngleVehicle;
+double 	gVelocityMonitor;
+double 	gAngleMonitor;
+double 	gVelocityRC;
+double 	gAngleRC;
+long 	gLastDirection=1;
+long 	gSemiAutoDirection=1; 	//right
+long 	gSemiAutoConstantVel=0;
+long  	gSemiAutoTargetPos[3];
+long 	gSemiAutoVel[3];
+
+// Variables for achermann steering
+double 	gAchSteering_pivotPoint_x;
+double 	gAchSteering_pivotPoint_y;
+double 	gAchSteering_pivotAngle;
+double 	gAchSteering_alphaTraverse1_3;
+double	gAchSteering_dist_path;
+
+double 	gAchSteering_fakt[3];
+double 	gAchSteering_angle_actuator[3];
+double	gAchSteering_dist_wheel[3];
+
+// Variables for configuration settings
+long    gConfigTyp;
+long 	gConfAlpha_1_3;
+long 	gConfRotCentrAct[3];
+long 	gConfRotCentrBoostF;
+long	gConfRotWheelAng_1_3[3];
+long 	gConfRotWheelAng_1[3];
+long 	gConfRotWheelAng_2[3];
+long 	gConfRotWheelAng_3[3];
+long 	gConfRotWheelPathL[4];
+	#define ROT_WHEELP_1_3_PATH_LENGTH	0
+	#define ROT_WHEELP_1_PATH_LENGTH	1
+	#define ROT_WHEELP_2_PATH_LENGTH	2
+	#define ROT_WHEELP_3_PATH_LENGTH	3
+long 	gConfRotWheelVelF_1_3[3];
+long 	gConfRotWheelVelF_1[3];
+long 	gConfRotWheelVelF_2[3];
+long 	gConfRotWheelVelF_3[3];
+long 	gConfRotWheelBoostF;
+

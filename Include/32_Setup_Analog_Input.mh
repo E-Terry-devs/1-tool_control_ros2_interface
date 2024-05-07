@@ -1,0 +1,101 @@
+
+long scaleHomingHall(long cnfVal, long curVal);
+
+void setupAnalogInput()
+{
+	// Setup an scale analog inputs
+	VIRTANIN_PARAM(AI_CNF_HOME_TRAV_2_NBR-1,VIRTANIN_UUFACT_UNITNO)		= 36000;
+	VIRTANIN_PARAM(AI_CNF_HOME_TRAV_2_NBR-1,VIRTANIN_UUFACT_DIGNO)		= 14680 - 1750;
+	VIRTANIN_PARAM(AI_CNF_HOME_TRAV_2_NBR-1,VIRTANIN_DIG_OFFSET) 		= -1750;
+
+	// Setup an scale analog inputs
+	VIRTANIN_PARAM(AI_CNF_HOME_TRAV_1_NBR-1,VIRTANIN_UUFACT_UNITNO)		= 36000;
+	VIRTANIN_PARAM(AI_CNF_HOME_TRAV_1_NBR-1,VIRTANIN_UUFACT_DIGNO)		= 14787 - 1769;
+	VIRTANIN_PARAM(AI_CNF_HOME_TRAV_1_NBR-1,VIRTANIN_DIG_OFFSET) 		= -1769;
+
+	// Setup an scale analog inputs
+	VIRTANIN_PARAM(AI_CNF_HOME_TRAV_3_NBR-1,VIRTANIN_UUFACT_UNITNO)		= 36000;
+	VIRTANIN_PARAM(AI_CNF_HOME_TRAV_3_NBR-1,VIRTANIN_UUFACT_DIGNO)		= 14690 - 1759;
+	VIRTANIN_PARAM(AI_CNF_HOME_TRAV_3_NBR-1,VIRTANIN_DIG_OFFSET) 		= -1759;
+
+	// Setup an scale analog inputs
+	VIRTANIN_PARAM(AI_CNF_FRAME_TRAV_1_NBR-1,VIRTANIN_UUFACT_UNITNO)	= 36000;
+	VIRTANIN_PARAM(AI_CNF_FRAME_TRAV_1_NBR-1,VIRTANIN_UUFACT_DIGNO)		= 16207 - 1711;
+	VIRTANIN_PARAM(AI_CNF_FRAME_TRAV_1_NBR-1,VIRTANIN_DIG_OFFSET) 		= -1711;
+
+	// Setup an scale analog inputs
+	VIRTANIN_PARAM(AI_CNF_FRAME_TRAV_3_NBR-1,VIRTANIN_UUFACT_UNITNO)	= 36000;
+	VIRTANIN_PARAM(AI_CNF_FRAME_TRAV_3_NBR-1,VIRTANIN_UUFACT_DIGNO)		= 16246 - 1720;
+	VIRTANIN_PARAM(AI_CNF_FRAME_TRAV_3_NBR-1,VIRTANIN_DIG_OFFSET) 		= -1720;
+
+
+}
+
+/*
+** Scale an analog input in a square or curve function
+*/
+long scaleJoystickInput(long input, long curveNbr, long maxValue, long maxSwing, long inputOffset)
+{
+	double scale;
+
+	// Set maximum and minimum to analog input
+	if(input > maxValue)
+	{
+		scale = maxValue;
+	}
+	else if (input < -maxValue)
+	{
+		scale = -maxValue;
+	}
+	else
+	{
+		scale=input;
+	}
+
+	SET_CURVE_POS(curveNbr,abs(scale));
+	scale = GET_CURVE_POS(curveNbr);
+
+	// Prevent input swing from analog IO
+	if((input < maxSwing) && (input > -maxSwing))
+	{
+		scale = 0;
+	}
+
+	if(input<0)
+		scale=-1*scale;
+
+	return(scale);
+}
+
+
+long scaleHomingHall(long cnfVal, long curVal)
+{
+    double scale;
+
+	if(cnfVal >= 0 && cnfVal <= 18000)
+	{
+		if(curVal > 0 && curVal < (cnfVal+18000))
+		{
+			scale = curVal - cnfVal;
+			return(scale/MECH_ACT_GEAR_FKT);
+		}else if (curVal >= (cnfVal+18000) && curVal <= 36000)
+		{
+			scale = -(cnfVal + (36000 - curVal));
+			return(scale/MECH_ACT_GEAR_FKT);
+		}
+	}else if(cnfVal > 18000 && cnfVal <= 36000)
+	{
+		if(curVal > (cnfVal - 18000) && curVal < 36000)
+		{
+			scale = curVal - cnfVal;
+			return(scale/MECH_ACT_GEAR_FKT);
+		}else if (curVal >= 0 && curVal < (cnfVal - 18000))
+		{
+			scale = curVal + (36000 - cnfVal);
+			return(scale/MECH_ACT_GEAR_FKT);
+		}
+		
+	}
+	
+
+}

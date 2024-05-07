@@ -1,0 +1,126 @@
+/*********************************************************************
+** Wheel Drives Defines
+**
+** The port numbers of the inputs and outputs(Hall, Enc, Axis) are
+** defined in the include files "IO_Port_Defines.mh"
+*********************************************************************/
+
+/*********************************************************************
+** Application Configuration
+*********************************************************************/
+
+//LED period timer
+#define LED_PERIOD_MANUAL			250				// Period tim in ms, 0 == always On
+#define LED_PERIOD_FOLD				1000			// Period tim in ms, 0 == always On
+#define LED_PERIOD_UNFOLD			1000			// Period tim in ms, 0 == always On
+#define LED_PERIOD_ROT_CENTER		500				// Period tim in ms, 0 == always On
+#define LED_PERIOD_ROT_WHEEL		500				// Period tim in ms, 0 == always On
+#define LED_PERIOD_STRAIGHT_DRIVE	0				// Period tim in ms, 0 == always On
+#define LED_PERIOD_CURVE_DRIVE		0				// Period tim in ms, 0 == always On
+#define LED_PERIOD_RUN				0				// Period tim in ms, 0 == always On
+#define LED_PERIOD_STOP				0				// Period tim in ms, 0 == always On
+#define LED_PERIOD_EMG				0				// Period tim in ms, 0 == always On
+#define LED_PERIOD_WAIT				500				// Period tim in ms, 0 == always On
+#define LED_PERIOD_SEMI_AUTO_CNF	250				// Period tim in ms, 0 == always On
+
+//Actuating Break pwm
+#define ACT_BREAK_REACT_TIME_RISE	350				// Indicates the time required from set break until reaching the holding brake's torque in ms
+#define ACT_BREAK_REACT_TIME_FALL	350				// Indicates the time required from release break until release the holding brake's torque in ms
+#define ACT_BREAK_STANDSTILL_VEL	100				// Defines a symmetric range of accepted velocity values relatively to zero in uu/s (5°/s)
+
+#define ACT_BREAK_PWM_DELAY			2000			// Delay until the brake is applied and the voltage on the brake can be reduced in ms
+#define ACT_BREAK_PERIOD_TIME		100				// Period time in ms
+#define ACT_BREAK_CYCLE				1				// Number of cycles in one period
+#define ACT_BREAK_CYCLE_ON			1				// Number of On cycles in one period
+
+//Actuating Break pwm
+#define WHEEL_BRAKE_REACT_TIME_RISE	350				// Indicates the time required from set break until reaching the holding brake's torque in ms
+#define WHEEL_BRAKE_REACT_TIME_FALL	350				// Indicates the time required from release break until release the holding brake's torque in ms
+#define WHEEL_BRAKE_STANDSTILL_VEL	100				// Defines a symmetric range of accepted velocity values relatively to zero in uu/s (5°/s)
+
+#define WHEEL_BRAKE_PWM_DELAY			2000			// Delay until the brake is applied and the voltage on the brake can be reduced in ms
+#define WHEEL_BRAKE_PERIOD_TIME		100				// Period time in ms
+#define WHEEL_BRAKE_CYCLE				1				// Number of cycles in one period
+#define WHEEL_BRAKE_CYCLE_ON			1				// Number of On cycles in one period
+
+// MotorOff TimeOut
+#define ACT_TIMEOUT_MOTOROFF		500				// Delay Time for AxisControl(x,OFF) in emergency case
+
+//Achermann steering
+#define ACH_STEERING_X_STRAIGHT_DRIVE		1000000	// For steering in the "StraightDrive" mode there is set a fixed x value, [mm]
+#define ACH_STEERING_Y_STRAIGHT_DRIVE_MAX	200000	// For steering in the "StraightDrive" mode there is set a max y value, [mm]
+
+#define ACH_STEERING_X_CURVE_DRIVE_MAX		60000	// For steering in the "StraightDrive" mode there is set a fixed x absolute value, [mm]
+#define ACH_STEERING_X_CURVE_DRIVE_MIN		2500	// For steering in the "StraightDrive" mode there is set a fixed x absolute value, [mm]
+#define ACH_STEERING_X_CURVE_DRIVE_MIN_FAKT	3		// Increase min drive radius in fast mode
+
+// Do not enable slope. The Y pivot Point must be zero. The inverse Kinematics must be calculated first (Achermann steering)
+#define ACH_STEERING_SLOPE_CURVE_DRIVE_Q1	0			// For steering in the "CurveDirve" mode there is set a fixed slope to define the y value, [1/100] p.e. 25 = 0.25,
+#define ACH_STEERING_SLOPE_CURVE_DRIVE_Q2	0			// For steering in the "CurveDirve" mode there is set a fixed slope to define the y value, [1/100]
+#define ACH_STEERING_SLOPE_CURVE_DRIVE_Q3	0			// For steering in the "CurveDirve" mode there is set a fixed slope to define the y value, [1/100]
+#define ACH_STEERING_SLOPE_CURVE_DRIVE_Q4	0		// For steering in the "CurveDirve" mode there is set a fixed slope to define the y value, [1/100]
+
+//Tank steering
+#define TANK_STEERING_MIN_WD_2				0.15		// Minimum faktor for steering in the "Tank" mode 1-0.25
+#define TANK_STEERING_MAX_WD_2				0.15		// Maximum faktor for steering in the "Tank" mode 1+0.25
+#define TANK_STEERING_MIN_WD_1_3			0.15		// Maximum faktor for steering in the "Tank" mode 1-0.25
+#define TANK_STEERING_MAX_WD_1_3			0.15		// Maximum faktor for steering in the "Tank" mode 1+0.25
+
+// Minimum suply voltage
+#define MM6_MIN_LOGIC_SUPPLY				21000		// Minimum logic voltage in 1/100 V
+#define MM9_MIN_POWER_SUPPLY				42000*0.9	// Minimum power voltage in 1/100 V
+
+// Curve for lookup table
+#define STEERING_CURVE_NBR						0
+#define BOOST_CURVE_NBR							1
+
+#define SET_CURVE_POS(curveNbr,input)			SyncDefOrigin(abs(input), curveNbr, 0)
+#define GET_CURVE_POS(curveNbr)					AXE_PROCESS(curveNbr,PFG_CCURVEPOS)
+
+// Loggine feature
+#define FILENAME "Log.txt"
+
+// Write debug information before/ while crash
+//#define FIRMWARE_DEBUG 	Sysvar[0x01221900 + 128] = 3;					//init powerdown save
+
+// Wait for stand still macro
+#define ACTUATING_DRIVE_NO_MOVE			((AxisMoving(ACTUATING_DRIVE_1)& AxisMoving(ACTUATING_DRIVE_2)&AxisMoving(ACTUATING_DRIVE_3))==0)
+// #define WHEEL_DRIVE_NO_MOVE				((Avel(WHEEL_DRIVE_1)==0)&&(Avel(WHEEL_DRIVE_2)==0)&&(Avel(WHEEL_DRIVE_3)==0))
+#define WHEEL_DRIVE_NO_MOVE				((AxisMoving(WHEEL_DRIVE_1)& AxisMoving(WHEEL_DRIVE_2)&AxisMoving(WHEEL_DRIVE_3))==0)
+#define WHEEL_DRIVE_1_TARGET_REACH		AxisTargetReached(WHEEL_DRIVE_1)
+#define WHEEL_DRIVE_2_TARGET_REACH		AxisTargetReached(WHEEL_DRIVE_2)
+#define WHEEL_DRIVE_3_TARGET_REACH		AxisTargetReached(WHEEL_DRIVE_3)
+#define ALL_DRIVE_NO_MOVE				(ACTUATING_DRIVE_NO_MOVE&&WHEEL_DRIVE_NO_MOVE)
+
+#define ACTUTATING_DRIVE_TAR_RECH		(AxisTargetReached(ACTUATING_DRIVE_1)& AxisTargetReached(ACTUATING_DRIVE_2)&AxisTargetReached(ACTUATING_DRIVE_3))
+#define WHEEL_DRIVE_TAR_RECH			(AxisTargetReached(WHEEL_DRIVE_1)& AxisTargetReached(WHEEL_DRIVE_2)&AxisTargetReached(WHEEL_DRIVE_3))
+
+#define ACT_DRIVE_BREAK_OPEN			((gActBreakOpen[0]==1) && (gActBreakOpen[1]==1) && (gActBreakOpen[2]==1))
+#define ACT_DRIVE_BREAK_CLOSE			((gActBreakOpen[0]==0) && (gActBreakOpen[1]==0) && (gActBreakOpen[2]==0))
+
+#define ACT_DRIVE_1_BREAK_OPEN			(gActBreakOpen[0]==1)
+#define ACT_DRIVE_2_BREAK_OPEN			(gActBreakOpen[1]==1)
+#define ACT_DRIVE_3_BREAK_OPEN			(gActBreakOpen[2]==1)
+
+#define ACT_DRIVE_1_BREAK_CLOSE			(gActBreakOpen[0]==0)
+#define ACT_DRIVE_2_BREAK_CLOSE			(gActBreakOpen[1]==0)
+#define ACT_DRIVE_3_BREAK_CLOSE			(gActBreakOpen[2]==0)
+
+#define ACT_DRIVE_1_BREAK_STATE			(gActBreakOpen[0])
+#define ACT_DRIVE_2_BREAK_STATE			(gActBreakOpen[1])
+#define ACT_DRIVE_3_BREAK_STATE			(gActBreakOpen[2])
+
+#define WHEEL_DRIVE_BRAKE_OPEN			((gWheelBrakeOpen[0]==1) && (gWheelBrakeOpen[1]==1) && (gWheelBrakeOpen[2]==1))
+#define WHEEL_DRIVE_BRAKE_CLOSE			((gWheelBrakeOpen[0]==0) && (gWheelBrakeOpen[1]==0) && (gWheelBrakeOpen[2]==0))
+
+#define WHEEL_DRIVE_1_BRAKE_OPEN			(gWheelBrakeOpen[0]==1)
+#define WHEEL_DRIVE_2_BRAKE_OPEN			(gWheelBrakeOpen[1]==1)
+#define WHEEL_DRIVE_3_BRAKE_OPEN			(gWheelBrakeOpen[2]==1)
+
+#define WHEEL_DRIVE_1_BRAKE_CLOSE			(gWheelBrakeOpen[0]==0)
+#define WHEEL_DRIVE_2_BRAKE_CLOSE			(gWheelBrakeOpen[1]==0)
+#define WHEEL_DRIVE_3_BRAKE_CLOSE			(gWheelBrakeOpen[2]==0)
+
+#define WHEEL_DRIVE_1_BRAKE_STATE			(gWheelBrakeOpen[0])
+#define WHEEL_DRIVE_2_BRAKE_STATE			(gWheelBrakeOpen[1])
+#define WHEEL_DRIVE_3_BRAKE_STATE			(gWheelBrakeOpen[2])

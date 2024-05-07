@@ -1,0 +1,242 @@
+/*********************************************************************
+**
+**                      CanOpen Utility Functions
+**                      -------------------------
+**
+**    These functions are called by the CanOpen State Machine functions.
+*/
+
+
+/*********************************************************************
+** CanOpenGetCommand
+**
+**    This routine will check to see if there is a command waiting
+** to be executed.  If so, then it parses the command and posts an
+** event to the state machine.  The return code from this routine
+** is ignored.
+*/
+
+long CanOpenGetCommand(long id, long data[])
+{
+    long valid, tmpval, oldcmd, newcmd, oldmod, newmod, signal;
+
+    if ( (id >= 0) && (id < ZBCOS_CNF_MAX_AXES) ) {
+
+        valid = 1;
+
+// description of command counters see CanOpenConfig.mi
+#if ZBCOS_CNF_CMDCOUNTERS != 0
+        tmpval = sysvar[ZBCOS_CNF_CMDCOUNTERS].b id;
+        if (tmpval != data[DATA_AppCommandCounter]) {
+            data[DATA_AppCommandCounter] = tmpval;
+        } else {
+            valid = 0;
+        }
+#endif
+
+        if (valid) {
+
+            /*
+            ** If we have been part of a multi axes command, but the new command isn't multiax any more,
+            ** then we have to reset the multi axes command count to zero.
+            */
+            if ( (ZbcosG_MultiAxesPart[id] == 1) && (Sysvar[ZBCOS_CUI_MULTI_AX_BASE+id] == 0) ) {
+                 zbcos_reset_multiaxcommand();  // it looks like a multiax command was interrupted
+            }
+            /*
+            ** If we should bee part of a multi axes command, but an old one is still active
+            ** then we have to reset the multi axes command settings.
+            */
+            if ( (ZbcosG_MultiAxesActiveCount != 0) && (Sysvar[ZBCOS_CUI_MULTI_AX_BASE+id] != 0) ) {
+                 zbcos_reset_multiaxcommand();  // reset the last multiax command values
+            }
+
+
+            /*
+            ** Only generate an event if either the command or operation
+            ** mode change.
+            */
+
+            oldcmd = data[DATA_OldCommand];
+            oldmod = data[DATA_OldOpMode];
+            newcmd = ZBCO_CONTROLWORD(id);
+            newmod = ZBCO_MODEOFOP(id);
+
+            tmpval = oldcmd ^ newcmd;                  // detect all changes in command word
+            data[DATA_NegCmdEdges] = tmpval & oldcmd;  // this are all negativ edges (have been 1 before)
+            data[DATA_PosCmdEdges] = tmpval & newcmd;  // this are all positiv edges (have been 0 before)
+
+            if (newcmd != oldcmd) {
+                // compare to CiA DSP402 Table 27 Command Coding
+                if ((newcmd & 0x8F) == 0x0F) {          // Enable Operation command.
+                    signal = SIG_ENABLEOPERATION;
+                } else if ((newcmd & 0x8F) == 0x07) {       // Switch On or Disable Operation command.
+                    signal = SIG_SWITCHON;
+                } else if ((newcmd & 0x87) == 0x06) {       // Shutdown command.
+                    signal = SIG_SHUTDOWN;
+                } else if ((newcmd & 0x86) == 0x02) {       // Quick Stop command.
+                    signal = SIG_QUICKSTOP;
+                } else if ((newcmd & 0x82) == 0x00) {       // Disable Voltage command.
+                    signal = SIG_DISABLEVOLTAGE;
+                } else if ((newcmd & 0x80) == 0x80) {   // Fault Reset command.
+                    signal = SIG_FAULTRESET;
+                } else {
+                    signal = SIG_INVALIDCOMMAND;
+                }
+
+                data[DATA_OldCommand] = newcmd;
+                SmPost(id, signal, newcmd);
+            }
+
+            if (oldmod != newmod) {
+                data[DATA_OldOpMode]  = newmod;
+                SmPost(id, SIG_MODECHANGED);
+            }
+
+        } // valid
+    }
+
+    return(0);
+}
+
+/*********************************************************************
+** CanOpenSetStatus
+**
+**    This routine will set the appropriate values to reflect the
+** current state of the state machine.  These values will be picked
+** up by whatever supervisor application is controlling the state
+** machine.  The return code from this routine is ignored.
+*/
+
+long CanOpenSetStatus(long id, long data[])
+{
+    long status;
+
+    data[DATA_StatusWord].i[ZBCOS_STW_ZEROVEL_BIT] = (SYS_PFG_VCMD(id) == 0);
+    data[DATA_StatusWord].i[ZBCOS_STW_PRW_SUPPLY_BIT] = (ZBCO_SUPPLYVOLTAGE() > ZBHW_VOLTAGELIMIT);
+
+    status = data[DATA_StatusWord];
+    if (status != data[DATA_OldStatus]) {
+        //print "Axis ",objectndx,": New Status ",status
+        ZBCO_STATUSWORD(id)   = status;
+        data[DATA_OldStatus]  = status;
+    }
+
+    Sysvar[ZBCOS_CUI_MODE_STATE_BASE + id] = data[DATA_State];
+
+    return(0);
+}
+
+/*********************************************************************
+** CanOpenPowerOn
+**
+**    This routine will turn the power on for the specified axis.
+** The return code from this routine is ignored.
+**
+** Warning:    This routine is not expected to fail.  If power cannot
+**          be turned on, then this routine should post some kind of
+**          "failure" event.  The existing CanOpen state machine
+**          implementation would need to be enhanced to support this
+**          functionality.
+*/
+
+long CanOpenPowerOn(long id)
+{
+    print("Axis ",id,": Power on");
+    return(0);
+}
+
+/*********************************************************************
+** CanOpenPowerOff
+**
+**    This routine will turn the power off for the specified axis.
+** The return code from this routine is ignored.
+**
+** Warning:    This routine may be called when power has not been
+**          successfully turned on.  The routine must be able to
+**          handle this case.
+*/
+
+long CanOpenPowerOff(long id)
+{
+    print("Axis ",id,": Power off");
+    return(0);
+}
+
+/*********************************************************************
+** CanOpenEnableDrive
+**
+**    This routine will enable the drive.  The return code from this
+** routine is ignored.
+**
+** Warning:    This routine is not expected to fail.  If the drive
+**          cannot be enabled, then this routine should post some
+**          kind of "failure" event.  The existing CanOpen state
+**          machine implementation would need to be enhanced to
+**          support this functionality.
+*/
+
+long CanOpenEnableDrive(long id, long data[])
+{
+    print("Axis ",id,": Enable drive");
+
+    data[DATA_WaitForPosErr] = 0;
+
+    AxisControl(id, ON);
+
+    return(0);
+
+}
+
+/*********************************************************************
+** CanOpenDisableDrive
+**
+**    This routine will enable the drive.  The return code from this
+** routine is ignored.
+**
+** Warning:    This routine may be called when the drive has not been
+**          successfully enabled.  The routine must be able to handle
+**          this case.
+*/
+
+long CanOpenDisableDrive(long id)
+{
+    print("Axis ",id,": Disable drive");
+
+    AxisControl(id, OFF);
+
+    return(0);
+}
+
+/*********************************************************************
+** CanOpenQuickStop
+**
+**    This routine will start a quick stop.  The return code from this
+** routine is ignored.
+*/
+
+long CanOpenQuickStop(long id)
+{
+    long emergency_dec, optcode;
+
+    optcode = ZBCO_QUICKOPTCODE(id);
+
+    print("Axis ",id,": Quick stop...optcode = ",optcode);
+
+    if( (optcode != ZBCOS_QUICKSTOP_SLW_ACT) && (optcode != ZBCOS_QUICKSTOP_SLW_DIS) ) {
+        if (ZBCO_INTERNALQUICKDEC(id) != 0) {
+            emergency_dec = ZBCO_INTERNALQUICKDEC(id); // QuickStopp-Ramp in internal units [%]
+        } else {
+            // QuickStopRamp is not set, just take the DEFAULT_QUICKSTOP_RAMP
+            emergency_dec = (AXE_PARAM(id, VELRES)) * (AXE_PARAM(id, RAMPMIN)) / DEFAULT_QUICKSTOP_RAMP;
+        }
+        print("Axis ",id,": dec ",emergency_dec);
+        Dec(id, emergency_dec);
+    }
+    AxisStop(id);
+
+    return(0);
+
+}
+
+

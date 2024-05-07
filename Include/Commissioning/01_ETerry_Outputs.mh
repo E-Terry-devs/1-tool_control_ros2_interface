@@ -1,0 +1,90 @@
+long eTerry_outputs(void)
+{
+	print("  ..eTerry_outputs\n");
+	DO_BREAK_ACT_DRIVE_1(1);
+	DO_BREAK_ACT_DRIVE_2(1);
+	DO_BREAK_ACT_DRIVE_3(1);
+	DO_BREAK_WD_DRIVE_1(1);
+	DO_BREAK_WD_DRIVE_2(1);
+	DO_BREAK_WD_DRIVE_3(1);
+	DO_LED_TRAV_1(1);
+	DO_LED_TRAV_2(0);
+	DO_LED_TRAV_3(0);
+	Delay(2000);
+	while(1)
+	{
+		//DO_BREAK_ACT_DRIVE_1(1);
+//		print("DO_BREAK_ACT_DRIVE_1, ON");
+//		Delay(2000);
+		//DO_BREAK_ACT_DRIVE_2(1);
+//		print("DO_BREAK_ACT_DRIVE_2, ON");
+//		Delay(2000);
+		//DO_BREAK_ACT_DRIVE_3(1);
+//		print("DO_BREAK_ACT_DRIVE_3, ON");
+//		Delay(2000);
+//		DO_BREAK_ACT_DRIVE_1(0);
+//		print("DO_BREAK_ACT_DRIVE_1, OFF");
+//		Delay(2000);
+//		DO_BREAK_ACT_DRIVE_2(0);
+//		print("DO_BREAK_ACT_DRIVE_2, OFF");
+//		Delay(2000);
+//		DO_BREAK_ACT_DRIVE_3(0);
+//		print("DO_BREAK_ACT_DRIVE_3, OFF");
+//		print("");
+//		Delay(2000);
+//
+		//DO_BREAK_WD_DRIVE_1(1);
+//		print("DO_BREAK_WD_DRIVE_1, ON");
+//		Delay(2000);
+		//DO_BREAK_WD_DRIVE_2(1);
+//		print("DO_BREAK_WD_DRIVE_2, ON");
+//		Delay(2000);
+		//DO_BREAK_WD_DRIVE_3(1);
+//		print("DO_BREAK_WD_DRIVE_3, ON");
+//		Delay(2000);
+//		DO_BREAK_WD_DRIVE_1(0);
+//		print("DO_BREAK_WD_DRIVE_1, OFF");
+//		Delay(2000);
+//		DO_BREAK_WD_DRIVE_2(0);
+//		print("DO_BREAK_WD_DRIVE_2, OFF");
+//		Delay(2000);
+//		DO_BREAK_WD_DRIVE_3(0);
+//		print("DO_BREAK_WD_DRIVE_3, OFF");
+//		Delay(2000);
+//		print("");
+//
+		//DO_LED_TRAV_1(1);
+		print("DO_LED_TRAV_1, ON");
+//		Delay(2000);
+		//DO_LED_TRAV_2(1);
+		print("DO_LED_TRAV_2, ON");
+//		Delay(2000);
+		//DO_LED_TRAV_3(1);
+		print("DO_LED_TRAV_3, ON");
+//		Delay(2000);
+//		DO_LED_TRAV_1(0);
+//		print("DO_LED_TRAV_1, OFF");
+//		Delay(2000);
+//		DO_LED_TRAV_2(0);
+//		print("DO_LED_TRAV_2, OFF");
+//		Delay(2000);
+//		DO_LED_TRAV_3(0);
+//		print("DO_LED_TRAV_3, OFF");
+//		print("");
+//		Delay(2000);
+//
+//		DO_MASTER_ENABLE(1);
+//		print("DO_MASTER_ENABLE, ON");
+//		Delay(2000);
+//		DO_MASTER_ENABLE(0);
+//		print("DO_MASTER_ENABLE, OFF");
+//		print("");
+//		Delay(2000);
+	}
+
+    return(1);
+}
+
+
+
+

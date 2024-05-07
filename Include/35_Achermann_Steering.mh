@@ -1,0 +1,271 @@
+/*********************************************************************
+** Kinematics calculation for the "Achermann Steering"
+**
+** In this file all mechanical constants are defined.
+**
+** Kinematics Structure
+**
+**							-| Drive 1
+**						   /
+**						  /
+**						 /
+**		Drive 2|- - - - O
+**						 \
+**						  \
+**						   \
+**							-| Drive 3
+**
+**
+**
+**						^ y
+**						|
+**						|
+**						|
+**						|
+**						|
+**						-------------> x
+**
+*********************************************************************/
+#define ACHERMANN_STEERING_PRINT	0	// Set to 1 if a debug is need. Be carefull there is a Delay() in the print funciton!!
+
+double 	traverse_alpha_1;
+double 	xTraverse_1, yTraverse_1;
+double 	xTraverse_2, yTraverse_2;
+double 	xTraverse_3, yTraverse_3;
+
+void AchermannSteering_Init()
+{
+	double 	a,b,e,c,d;
+	long	i;
+
+	// Define mechanical components
+	a = 0;
+	b = (double)MECH_TRAVERSE_1/100;				// Same like MECH_TRAVERSE_3
+	e = (double)MECH_TRAVERSE_2/100;
+	c = (double)MECH_DIST_JNT_TRAV_1/100;			// Same like MECH_DIST_JNT_TRAV_3
+	d = (double)MECH_DIST_JNT_TRAV_2/100;
+
+	gAchSteering_alphaTraverse1_3 = rad((double)gConfAlpha_1_3/100);
+	traverse_alpha_1 = gAchSteering_alphaTraverse1_3/2 - tan(c/b);
+
+	xTraverse_1 = cos(traverse_alpha_1)*sqrt(pow(c,2)+pow(b,2));
+	yTraverse_1 = d + sin(traverse_alpha_1)*sqrt(pow(c,2)+pow(b,2));
+
+	xTraverse_2 = -e;
+	yTraverse_2 = 0;
+
+	xTraverse_3 = xTraverse_1;
+	yTraverse_3 = -yTraverse_1;
+
+	for(i=0;i<3;i++)
+	{
+		gAchSteering_dist_wheel[i]=0;
+		gAchSteering_fakt[i]=1;
+		gAchSteering_angle_actuator[i]=0;
+
+	}
+}
+
+void AchermannSteering_Calc(double pivotPoint_x_cmd,double pivotPoint_y_cmd, double pivotAngle)
+{
+	double 	xWheel_1, yWheel_1;
+	double 	xWheel_2, yWheel_2;
+	double 	xWheel_3, yWheel_3;
+	double 	rWheel_1;
+	double 	rWheel_2;
+	double 	rWheel_3;
+	double 	rPath;
+	double 	a;
+	double	pivotPoint_x_act, pivotPoint_y_act;
+	long	i;
+	long maxPath,minPath;
+
+	// Define mechanical components
+	//a = (double)MECH_DIST_ACTUATOR_1/100;
+	a = 0;
+
+	if((pivotPoint_x_cmd!=0)||(pivotPoint_y_cmd!=0))
+	{
+		if((abs(pivotPoint_x_cmd) > abs(xTraverse_2) + 500))
+		{
+
+			gAchSteering_angle_actuator[0]	= atan((pivotPoint_y_cmd-yTraverse_1)/(pivotPoint_x_cmd-xTraverse_1));
+			gAchSteering_angle_actuator[1]	= atan(pivotPoint_y_cmd/(pivotPoint_x_cmd-xTraverse_2));
+			gAchSteering_angle_actuator[2]	= atan((pivotPoint_y_cmd-yTraverse_3)/(pivotPoint_x_cmd-xTraverse_3));
+
+			xWheel_1 = xTraverse_1+cos(rad((double)Apos(ACTUATING_DRIVE_1)/100.0))*a;
+			yWheel_1 = yTraverse_1+sin(rad((double)Apos(ACTUATING_DRIVE_1)/100.0))*a;
+
+			xWheel_2 = xTraverse_2-cos(rad((double)Apos(ACTUATING_DRIVE_2)/100.0))*a;
+			yWheel_2 = yTraverse_2-sin(rad((double)Apos(ACTUATING_DRIVE_2)/100.0))*a;
+
+			xWheel_3 = xTraverse_3+cos(rad((double)Apos(ACTUATING_DRIVE_3)/100.0))*a;
+			yWheel_3 = yTraverse_3+sin(rad((double)Apos(ACTUATING_DRIVE_3)/100.0))*a;
+
+
+		if(pivotPoint_y_cmd!=0)
+		{
+			// Workaround without actual pivotPoint... pivotPoint y is alway 0
+			pivotPoint_x_act   	= pivotPoint_x_cmd;
+			pivotPoint_y_act	= pivotPoint_y_cmd;
+		}
+		else
+		{
+			if(Apos(ACTUATING_DRIVE_1)<0)
+			{
+				USER_PARAM(USR_MONITOR_ACH_PIVOT_Y)= yWheel_1*tan(rad(90.0-fabs((double)Apos(ACTUATING_DRIVE_1)/100.0)))+xWheel_1;
+				pivotPoint_x_act = yWheel_1*tan(rad(90.0-fabs((double)Apos(ACTUATING_DRIVE_1)/100.0)))+xWheel_1;
+			}
+			else if(Apos(ACTUATING_DRIVE_1)>0)
+			{
+				USER_PARAM(USR_MONITOR_ACH_PIVOT_Y)= -1*yWheel_1*tan(rad(90.0-fabs((double)Apos(ACTUATING_DRIVE_1)/100.0)))+xWheel_1;
+				pivotPoint_x_act = -1*yWheel_1*tan(rad(90.0-fabs((double)Apos(ACTUATING_DRIVE_1)/100.0)))+xWheel_1;
+			}
+			else
+				pivotPoint_x_act   	= pivotPoint_x_cmd;
+			pivotPoint_y_act	= pivotPoint_y_cmd;
+		}
+
+		if (pivotPoint_x_act >= 0)
+		{
+			rWheel_1 = sqrt(pow((pivotPoint_y_act-yTraverse_1),2)+pow((pivotPoint_x_act-xTraverse_1),2))-a;
+			rWheel_2 = sqrt(pow((pivotPoint_y_act),2)+pow((pivotPoint_x_act-xTraverse_2),2))+a;
+			rWheel_3 = sqrt(pow((pivotPoint_y_act-yTraverse_3),2)+pow((pivotPoint_x_act-xTraverse_3),2))-a ;
+		}
+		else
+		{
+			rWheel_1 = sqrt(pow((pivotPoint_y_act-yTraverse_1),2)+pow((pivotPoint_x_act-xTraverse_1),2))+a;
+			rWheel_2 = sqrt(pow((pivotPoint_y_act),2)+pow((pivotPoint_x_act-xTraverse_2),2))-a;
+			rWheel_3 = sqrt(pow((pivotPoint_y_act-yTraverse_3),2)+pow((pivotPoint_x_act-xTraverse_3),2))+a;
+		}
+
+		maxPath = max(rWheel_1,rWheel_2);
+		maxPath = max(maxPath,rWheel_3);
+		minPath = min(rWheel_1,rWheel_2);
+		minPath = max(minPath,rWheel_3);
+
+		rPath = minPath + (maxPath-minPath)/2;
+
+
+
+		gAchSteering_fakt[0] = 1/rPath * rWheel_1;
+		gAchSteering_fakt[1] = 1/rPath * rWheel_2;
+		gAchSteering_fakt[2] = 1/rPath * rWheel_3;
+
+		gAchSteering_dist_path    = rad(pivotAngle)*rPath;
+		gAchSteering_dist_wheel[0] = rad(pivotAngle)*rPath*gAchSteering_fakt[0];
+		gAchSteering_dist_wheel[1] = rad(pivotAngle)*rPath*gAchSteering_fakt[1];
+		gAchSteering_dist_wheel[2] = rad(pivotAngle)*rPath*gAchSteering_fakt[2];
+
+
+		for(i=0;i<=2;i++)
+		{
+			gAchSteering_angle_actuator[i]=grad(gAchSteering_angle_actuator[i])*100;
+		}
+		}
+	}
+	else
+	{
+		for(i=0;i<3;i++)
+		{
+			gAchSteering_dist_wheel[i]=0;
+			gAchSteering_fakt[i]=1;
+			gAchSteering_angle_actuator[i]=0;
+
+		}
+	}
+	#if (ACHERMANN_STEERING_PRINT==1)
+	{
+
+//		print("pivotPoint_x ",pivotPoint_x);
+//		print("pivotPoint_y ",pivotPoint_y);
+//		print("a ",a);
+//		print("b ",b);
+//		print("e ",e);
+//		print("c ",c);
+//		print("d ",d);
+//		print("");
+//		print("traverse_alpha_1 ",traverse_alpha_1);
+//		print("");
+//		print("xWheel_1 ",xWheel_1);
+//		print("yWheel_1 ",yWheel_1);
+//		print("");
+//		print("xWheel_2 ",xWheel_2);
+//		print("yWheel_2 ",yWheel_2);
+//		print("");
+//		print("xWheel_3 ",xWheel_3);
+//		print("yWheel_3 ",yWheel_3);
+		print("");
+		Delay(500);
+
+	}
+
+	#endif
+
+	USER_PARAM(USR_MONITOR_ACH_PIVOT_X) = pivotPoint_x_cmd;
+	USER_PARAM(USR_MONITOR_ACH_PIVOT_Y)= pivotPoint_y_cmd;
+}
+
+double setPivotPointX_straightDrive(void)
+{
+	double calcPivotPoint_x;
+	calcPivotPoint_x = -ACH_STEERING_X_STRAIGHT_DRIVE;
+
+	if(gAngleVehicle<0)
+		calcPivotPoint_x=-1*calcPivotPoint_x;
+	else if (gAngleVehicle == 0)
+		calcPivotPoint_x=0;
+	return(calcPivotPoint_x);
+}
+
+double setPivotPointY_straightDrive(void)
+{
+	double calcPivotPoint_y;
+	calcPivotPoint_y = ACH_STEERING_Y_STRAIGHT_DRIVE_MAX*(double)abs(gAngleVehicle)/(double)AI_JOYSTICK_STEERING_UU;
+
+	return(calcPivotPoint_y);
+}
+
+double setPivotPointX_curveDrive(void)
+{
+	double calcPivotPoint_x;
+
+	// Todo insert Makros instead of magic numbers
+	if(gMotorSlowModeOn && !DI_SET_CONST_SPEED)
+		calcPivotPoint_x = ACH_STEERING_X_CURVE_DRIVE_MAX-(((abs((double)gAngleVehicle))*((double)ACH_STEERING_X_CURVE_DRIVE_MAX-(double)ACH_STEERING_X_CURVE_DRIVE_MIN))/(double)(AI_JOYSTICK_STEERING_UU/10));
+	else
+		calcPivotPoint_x = ACH_STEERING_X_CURVE_DRIVE_MAX-(((abs((double)gAngleVehicle))*((double)ACH_STEERING_X_CURVE_DRIVE_MAX-(double)ACH_STEERING_X_CURVE_DRIVE_MIN*ACH_STEERING_X_CURVE_DRIVE_MIN_FAKT))/(double)(AI_JOYSTICK_STEERING_UU/10));
+
+	if (gAngleVehicle == 0)
+		calcPivotPoint_x=0;
+	else if(gAngleVehicle > 0)
+		calcPivotPoint_x=calcPivotPoint_x*-1;
+
+	return(calcPivotPoint_x);
+}
+
+double setPivotPointY_curveDrive(void)
+{
+	double slope = 0;
+	double calcPivotPoint_y;
+	double calcPivotPoint_x;
+
+	calcPivotPoint_x = ACH_STEERING_X_CURVE_DRIVE_MAX-(((abs((double)gAngleVehicle))*((double)ACH_STEERING_X_CURVE_DRIVE_MAX-(double)ACH_STEERING_X_CURVE_DRIVE_MIN))/(double)(AI_JOYSTICK_STEERING_UU/10));
+	if (gAngleVehicle == 0)
+		calcPivotPoint_x=0;
+	else if(gAngleVehicle > 0)
+		calcPivotPoint_x=calcPivotPoint_x*-1;
+
+	if(gVelocityVehicle >= 0 && gAngleVehicle <= 0)
+		slope = (double)ACH_STEERING_SLOPE_CURVE_DRIVE_Q1/100;
+	else if(gVelocityVehicle <= 0 && gAngleVehicle <= 0)
+		slope = (double)ACH_STEERING_SLOPE_CURVE_DRIVE_Q2/100;
+	else if(gVelocityVehicle <= 0 && gAngleVehicle >= 0)
+		slope = (double)ACH_STEERING_SLOPE_CURVE_DRIVE_Q3/100;
+	else if(gVelocityVehicle >= 0 && gAngleVehicle >= 0)
+		slope = (double)ACH_STEERING_SLOPE_CURVE_DRIVE_Q4/100;
+
+	calcPivotPoint_y = 	calcPivotPoint_x * slope;
+
+	return(calcPivotPoint_y);
+}

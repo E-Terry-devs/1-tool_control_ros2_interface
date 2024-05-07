@@ -1,0 +1,34 @@
+
+long eTerry_inputs(void)
+{
+
+	setupAnalogInput();
+	while(1)
+	{
+		print("");
+		DO_BREAK_ACT_DRIVE_1(1);
+		DO_BREAK_ACT_DRIVE_2(1);
+		DO_BREAK_ACT_DRIVE_3(1);
+
+		print("DI_EMG_STOP_TRAV_1:	", DI_EMG_STOP_TRAV_1);
+		print("DI_EMG_STOP_TRAV_2:	", DI_EMG_STOP_TRAV_2);
+		print("DI_EMG_STOP_TRAV_3:	", DI_EMG_STOP_TRAV_3);
+		print("DI_HMI_1_TRAV_1:		", DI_HMI_1_TRAV_1);
+		print("DI_HMI_2_TRAV_1:		", DI_HMI_2_TRAV_1);
+		print("");
+		//print("AI_CNF_HOME_TRAV_1:	", AI_CNF_HOME_TRAV_1);
+		print("AI_CNF_FRAME_TRAV_1:	", AI_CNF_FRAME_TRAV_1);
+		//print("AI_CNF_HOME_TRAV_2:	", AI_CNF_HOME_TRAV_2);
+		//print("AI_CNF_FRAME_TRAV_2:	", AI_CNF_FRAME_TRAV_2);
+		//print("AI_CNF_HOME_TRAV_3:	", AI_CNF_HOME_TRAV_3);
+		print("AI_CNF_FRAME_TRAV_3:	", AI_CNF_FRAME_TRAV_3);
+		print("");
+		Delay(2000);
+	}
+
+    return(1);
+}
+
+
+
+

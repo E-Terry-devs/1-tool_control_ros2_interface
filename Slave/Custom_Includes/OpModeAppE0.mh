@@ -1,0 +1,46 @@
+/*********************************************************************
+**
+**                CanOpen Operational Mode: App E0
+**                --------------------------------
+*/
+
+SmState DriveModeAppE0
+    {
+    SIG_ENTRY           = DriveModeAppE0_Entry;
+    SIG_ENABLEOPERATION = DriveModeAppE0_EnableOperation;
+    }
+
+/*********************************************************************
+**
+**                  App E0 Mode State Functions
+**                  ---------------------------
+*/
+
+long DriveModeAppE0_Entry(long id, long signal, long event[], long data[])
+{
+    print("Axis ",id,": Enter state OperationEnabled - AppE0Mode");
+
+    data[DATA_State] = STATE_M_APPE0;
+
+    return(SmHandled);
+}
+
+long DriveModeAppE0_EnableOperation(long id, long signal, long event[], long data[])
+{
+    /*
+    ** If the Op Mode changes, then pass the event back to the OperationEnabled
+    ** superstate so that it can change the operation mode.
+    */
+
+
+    /*
+    ** If an AppE0 function is defined, then execute it.  Otherwise, just return
+    ** "SmHandled" to discard the event.
+    */
+
+#ifdef ZBCOS_MODOP_APP_E0_FUNCTION
+    return(ZBCOS_MODOP_APP_E0_FUNCTION(id, signal, event, data));
+#else
+    return(SmHandled);
+#endif
+}

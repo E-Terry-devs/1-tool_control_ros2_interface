@@ -1,0 +1,140 @@
+#include "SDK\SDK_ApossC.mc"
+// Axis settings
+#define ECi40_500749_ENCRES 			4*256				// Resolution of the encoder for position feed back in increments (quadcounts)
+#define ECi40_500749_ENC_LATCHTYPE 		0					// Defines the latch type: Digital input
+#define ECi40_500749_ENC_LATCHPARAM 	0					// Latch on digital input 1
+#define ECi40_500749_ENC_LATCHSLOPE 	HWLATCH_SLOPE_RISING// Defines the slope of the trigger signal (Default 1)
+
+#define ECi40_500749_CONTROLMODE	HWAMP_MODE_POS_CUR	// Define control typ
+#define ECi40_500749_POLEPAIRS		8						// Number of pole pairs
+#define ECi40_500749_CONTCUR		8670					// Nomial continious current allowed in mA
+#define ECi40_500749_MAXCUR			ECi40_500749_CONTCUR*2	// Maximal current allowed in mA
+#define ECi40_500749_THERMAL_TIME	15900*2					// Thermal time constant of the winding
+#define ECi40_500749_MAX_RPM		5000					// Maximum velocity in RPM
+#define ECi40_500749_CURKPROP		320						// Proportional factor of current controller
+#define ECi40_500749_CURKINT		90						// Integral factor of current controller
+#define ECi40_500749_CURKILIM		32767					// Integral limit of current controller
+#define ECi40_500749_VELKPROP		2000					// Proportional factor of velocity controller
+#define ECi40_500749_VELKINT		250						// Integral factor of velocity controller
+#define ECi40_500749_VELKILIM		1000					// Integral limit of velocity controller
+
+#define	ECi40_500749_BRUSHLESS		1						// Mode of aligment: For brushless motors
+#define ECi40_500749_ALIGN_CUR		3000					// Current for the alignment function in mA
+
+#define ECi40_500749_VELRES			ECi40_500749_MAX_RPM	// Velocity resolution, Scaling used for the velocity and acceleration/deceleration commands
+#define ECi40_500749_RAMPTYPE		RAMPTYPE_JERKLIMITED	// Defines the ramptype
+#define ECi40_500749_RAMPMIN		1000					// Maximum acceleration
+#define ECi40_500749_JERKMIN		100						// Minimum time (ms) required before reaching the maximum acceleration
+#define ECi40_500749_POSERR			2000					//
+#define ECi40_500749_DIRECTION		1						// User units have normal orientation. Increasing encoder values result in increasing user positions.
+
+#define	ECi40_500749_KPROP			100						// Proportional value for PID position control loop
+#define	ECi40_500749_KINT			0						// Integral value for PID position control loop
+#define	ECi40_500749_KDER			200						// Derivative value for PID position control loop
+#define	ECi40_500749_KILIM			1000					// Limit value for the integral sum of the PID position control loop
+#define	ECi40_500749_KILIMTIME		0						// Time used to increase or decrease the integral limit
+#define	ECi40_500749_BANDWIDTH		1000					// Bandwidth within which the PID filter is active. 1000 equals to 100% velocity setpoint
+#define	ECi40_500749_FFVEL			0						// Velocity Feed forward
+#define	ECi40_500749_KFFAC			0						// Acceleration Feed forward
+#define	ECi40_500749_KFFDEC			0						// Deceleration Feed Forward
+
+#define	ECi40_500749_POSENCREV		1						// Number of revolutions of the motor
+#define	ECi40_500749_POSENCQC		ECi40_500749_ENCRES		// Number of quadcounts in POSENCREV revolutions
+#define	ECi40_500749_POSFACT_Z		1						// Number of revolutions of the input shaft
+#define	ECi40_500749_POSFACT_N		1						// Number of revolutions of the output shaft in POSFACT_Z revolutions of the input shaft
+#define	ECi40_500749_FEEDREV		1						// Number of revolutions of the gear box output shaft
+#define	ECi40_500749_FEEDDIST		360		// Distance travelled (in user units) in FEEDREV revolutions of the gear box output shaft
+
+
+long setupECi40_500749_Inc(long axisNo, long encPort)
+{
+	long checkMotorAlignment;
+
+	// Encoder setup
+	sdkSetupIncEncoder(			axisNo,
+								encPort,
+								ECi40_500749_ENCRES,
+								ECi40_500749_ENC_LATCHTYPE,
+								ECi40_500749_ENC_LATCHPARAM,
+								ECi40_500749_ENC_LATCHSLOPE
+								);
+	// Amplifier setup
+	sdkSetupAmpPmsmMotor(		axisNo,
+								ECi40_500749_CONTROLMODE,
+								ECi40_500749_POLEPAIRS,
+								ECi40_500749_MAXCUR,
+								ECi40_500749_ENCRES,
+								ECi40_500749_MAX_RPM
+								);
+	// Virtual I2T
+	sdkSetupVirtualI2T(axisNo,ECi40_500749_CONTCUR,ECi40_500749_THERMAL_TIME);
+
+	// Current control setup
+	sdkSetupCurrentPIControl( 	axisNo,
+								ECi40_500749_CURKPROP,
+								ECi40_500749_CURKINT,
+								ECi40_500749_CURKILIM
+								);
+	// Velocity control setup
+	sdkSetupVelocityPIControl( 	axisNo,
+								ECi40_500749_VELKPROP,
+								ECi40_500749_VELKINT,
+								ECi40_500749_VELKILIM
+								);
+	// Movement parameters for the axis
+	sdkSetupAxisMovementParam(	axisNo,
+								ECi40_500749_VELRES,
+								ECi40_500749_MAX_RPM,
+								ECi40_500749_RAMPTYPE,
+								ECi40_500749_RAMPMIN,
+								ECi40_500749_JERKMIN
+								);
+
+	// Set the direction of the axis
+	sdkSetupAxisDirection( 		axisNo,
+								ECi40_500749_DIRECTION);
+	// Position control setup
+	sdkSetupPositionPIDControlExt( 	axisNo,
+									ECi40_500749_KPROP,
+									ECi40_500749_KINT,
+									ECi40_500749_KDER,
+									ECi40_500749_KILIM,
+									ECi40_500749_KILIMTIME,
+									ECi40_500749_BANDWIDTH,
+									ECi40_500749_FFVEL,
+									ECi40_500749_KFFAC,
+									ECi40_500749_KFFDEC
+									);
+	// Definition of the user units
+	sdkSetupAxisUserUnits(		axisNo,
+								ECi40_500749_POSENCREV,
+								ECi40_500749_POSENCQC,
+								ECi40_500749_POSFACT_Z,
+								ECi40_500749_POSFACT_N,
+								ECi40_500749_FEEDREV,
+								ECi40_500749_FEEDDIST
+								);
+
+	// Following error
+	AXE_PARAM(axisNo,POSERR)	= 	ECi40_500749_POSERR;
+
+	// Motor Alignment
+	checkMotorAlignment =	sdkMotorAlignment(
+							axisNo,
+							ECi40_500749_BRUSHLESS,
+							ECi40_500749_MAXCUR,
+							ECi40_500749_ALIGN_CUR);
+
+
+
+	if(checkMotorAlignment<0)
+	{
+		print("Sorry alignement didn't work we exit");
+		Exit(0);
+	}
+
+
+
+	HWAMP_PARAM(axisNo,HWAMP_CURFILTTIME	)=10;
+
+}

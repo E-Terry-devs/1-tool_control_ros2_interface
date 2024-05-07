@@ -1,0 +1,127 @@
+/*********************************************************************
+** State Machine Defines
+**
+** All defines which are needed for the configuration of the state
+** machine as well as the corresponding SmEvent signals are declared
+**  in this file.
+**
+*********************************************************************/
+
+/*********************************************************************
+** State Machine ID
+*********************************************************************/
+#define SMID_ETERRY        			1		// ID number of the main state machine.
+#define SMID_LEDCONTROL        		2		// ID number of the state machine led control
+#define SMID_ACTBREAK        		3		// ID number of the state machine led control
+#define SMID_WDBREAK        		4		// ID number of the state machine led control
+#define SMID_REMOTECONTROL        	5		// ID number of the state machine led control
+/*********************************************************************
+** Private Data Array Indices
+*********************************************************************/
+#define ETERRY_DATA        	1       // Length of private data for the state machine.
+
+#define LED_DATA        	1       // Length of private data for the state machine.
+
+#define ACT_BREAK_DATA      7       // Length of private data for the state machine.
+	#define ACT_BREAK_1_OPEN	0
+	#define ACT_BREAK_2_OPEN	1
+	#define ACT_BREAK_3_OPEN	2
+	#define ACT_BREAK_1_PWM		3
+	#define ACT_BREAK_2_PWM		4
+	#define ACT_BREAK_3_PWM		5
+	#define ACT_BREAK_PWM_CNT	6
+
+#define WHEEL_BRAKE_DATA      7       // Length of private data for the state machine.
+	#define WHEEL_BRAKE_1_OPEN	0
+	#define WHEEL_BRAKE_2_OPEN	1
+	#define WHEEL_BRAKE_3_OPEN	2
+	#define WHEEL_BRAKE_1_PWM	3
+	#define WHEEL_BRAKE_2_PWM	4
+	#define WHEEL_BRAKE_3_PWM	5
+	#define WHEEL_BRAKE_PWM_CNT	6
+
+
+/*********************************************************************
+** State Machine Setup Parameters
+*********************************************************************/
+
+#pragma SmConfig { SM_RUN_DELAY|SM_RUN_NO_DUPLICATE_EVENTS,// Runtime flags.
+                   25,                                  // Event pool size.
+                    10,                                  // Maximum number of timers.
+                   15,                              	// Subscribe pool size.
+                   45,                                  // Parameter pool size.
+                   0,                                  	// Position pool size.
+                   25 }                                	// System signal pool size.
+
+/*********************************************************************
+** Event Definitions
+*********************************************************************/
+
+//// RC control events
+SmEvent SIG_SLEEPMODE      		{ SDONDX, VALUE }
+SmEvent SIG_CURVE_DRIVE    		{ SDONDX, VALUE }
+SmEvent SIG_ROT_CENTRALPOINT    { SDONDX, VALUE }
+SmEvent SIG_SET_CONST_SPEED   	{ SDONDX, VALUE }
+SmEvent SIG_EXTERNAL_INPUT      { SDONDX, VALUE }
+SmEvent SIG_DATA_LOGGING      	{ SDONDX, VALUE }
+SmEvent SIG_ERROR_RADIO      	{ SDONDX, VALUE }
+SmEvent SIG_VEHICLE_ENABLE		{ SDONDX, VALUE }
+SmEvent SIG_SLOW_MODE			{ SDONDX, VALUE }
+SmEvent SIG_SEMI_AUTO_ON		{ SDONDX, VALUE }
+SmEvent SIG_SEMI_AUTO_CURVE		{ SDONDX, VALUE }
+
+// Vehicle sensor control events
+SmEvent SIG_CHANGE_CONFIG_1    	{ SDONDX, VALUE }
+SmEvent SIG_CHANGE_CONFIG_2    	{ SDONDX, VALUE }
+SmEvent SIG_CHANGE_CONFIG_3    	{ SDONDX, VALUE }
+SmEvent SIG_CHANGE_CONFIG_4    	{ SDONDX, VALUE }
+SmEvent SIG_MANUAL_EBOX_1    	{ SDONDX, VALUE }
+SmEvent SIG_MANUAL_EBOX_2    	{ SDONDX, VALUE }
+SmEvent SIG_MANUAL_TRAV_3_1    	{ SDONDX, VALUE }
+SmEvent SIG_MANUAL_TRAV_3_2    	{ SDONDX, VALUE }
+SmEvent SIG_MANUAL_MODE   	    { SDONDX, VALUE }
+
+SmEvent SIG_EMG_BUTTON    		{ SDONDX, VALUE }
+
+// Internal Events
+SmEvent SIG_USER_ERROR      	{ SDONDX, VALUE }
+SmEvent SIG_TIMER_MOTOROFF     	{ CLOCK }
+
+// Monitor control events only if the monitor file is used
+#if CONTROL_METHODE ==  MONITOR
+	SmEvent SIG_JOYSTICK_BOOST_UP      	{ SDONDX, VALUE }
+	SmEvent SIG_JOYSTICK_BOOST_DOWN     { SDONDX, VALUE }
+	SmEvent SIG_JOYSTICK_STEERING_LEFT  { SDONDX, VALUE }
+	SmEvent SIG_JOYSTICK_STEERING_RIGHT	{ SDONDX, VALUE }
+	SmEvent SIG_MOTOR_OFF      			{ SDONDX, VALUE }
+	SmEvent SIG_HOME        			{ SDONDX, VALUE }
+	SmEvent SIG_STOP        			{ SDONDX, VALUE }
+	SmEvent SIG_CHANGEVEL      			{ SDONDX, VALUE }
+	SmEvent SIG_SAVEVEL      			{ SDONDX, VALUE }
+#endif
+
+SmEvent SIG_LED_ON						{ LED_PERIOD, LED_1, LED_2,LED_3}
+SmEvent SIG_LED_OFF						{ }
+SmEvent SIG_LED_FLOW_RIGHT				{ LED_PERIOD }
+SmEvent SIG_LED_FLOW_LEFT				{ LED_PERIOD }
+SmEvent SIG_LED_PERIOD					{ CLOCK }
+
+SmEvent SIG_ACT_BREAK_REACT_TIME_RISE	{ CLOCK }	// Indicates the time required from set break until reaching the holding brake's torque in ms
+SmEvent SIG_ACT_BREAK_REACT_TIME_FALL	{ CLOCK }	// Indicates the time required from release break until release the holding brake's torque in ms
+
+SmEvent SIG_ACT_BREAK					{ACT_BREAK_1, ACT_BREAK_2, ACT_BREAK_3}
+SmEvent SIG_ACT_BREAK_PERIOD			{ CLOCK }
+SmEvent SIG_ACT_BREAK_DELAY				{ CLOCK }
+
+SmEvent SIG_WHEEL_BRAKE_REACT_TIME_RISE	{ CLOCK }	// Indicates the time required from set break until reaching the holding brake's torque in ms
+SmEvent SIG_WHEEL_BRAKE_REACT_TIME_FALL	{ CLOCK }	// Indicates the time required from release break until release the holding brake's torque in ms
+
+SmEvent SIG_WHEEL_BRAKE					{WHEEL_BRAKE_1, WHEEL_BRAKE_2, WHEEL_BRAKE_3}
+SmEvent SIG_WHEEL_BRAKE_PERIOD			{ CLOCK }
+SmEvent SIG_WHEEL_BRAKE_DELAY			{ CLOCK }
+
+//Ethernet events
+SmEvent SIG_ETH_RECEIVE {handle}
+SmEvent SIG_ETHERNET_INIT {handle}
+SmEvent SIG_PERIOD {}
+SmEvent SIG_TIMER {}

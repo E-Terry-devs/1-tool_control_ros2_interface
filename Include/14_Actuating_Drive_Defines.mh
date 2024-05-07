@@ -1,0 +1,105 @@
+/*********************************************************************
+** Actuating Drives Defines
+**
+** The port numbers of the inputs and outputs(Hall, Enc, Axis) are
+** defined in the include files "IO_Port_Defines.mh"
+*********************************************************************/
+
+/*********************************************************************
+** Drive Configuration
+*********************************************************************/
+
+// Encoder
+#define ACTUATING_DRIVE_ENCRES 			4*1024					// Resolution of the encoder for position feed back in increments (quadcounts)
+
+#define ACTUATING_DRIVE_MAX_RPM			114*0.80*48				// Maximum velocity in RPM
+#define ACTUATING_DRIVE_CURKPROP		1000					// Proportional factor of current controller		//R = 0.284 Ohm L= 0.443 mH
+#define ACTUATING_DRIVE_CURKINT			75						// Integral factor of current controller
+#define ACTUATING_DRIVE_CURKILIM		0x7FFF					// Integral limit of current controller
+#define ACTUATING_DRIVE_VELKPROP		0						// Proportional factor of velocity controller	// Velocity control is not used
+#define ACTUATING_DRIVE_VELKINT			0						// Integral factor of velocity controller		// Velocity control is not used
+#define ACTUATING_DRIVE_VELKILIM		0						// Integral limit of velocity controller		// Velocity control is not used
+
+// Axis Movement Parameter
+#define ACTUATING_DRIVE_VELRES			1000					// Velocity resolution, Scaling used for the velocity and acceleration/deceleration commands
+#define ACTUATING_DRIVE_RAMPTYPE		RAMPTYPE_JERKLIMITED	// Defines the ramptype
+#define ACTUATING_DRIVE_RAMPMIN			5000					// Maximum acceleration
+#define ACTUATING_DRIVE_JERKMIN			1000					// Minimum time (ms) required before reaching the maximum acceleration
+#define ACTUATING_DRIVE_TRACKERR		ACTUATING_DRIVE_ENCRES	// Disable Todo → conzept
+
+// Axis User Units
+#define	ACTUATING_DRIVE_POSENCREV		1							// Number of revolutions of the motor
+#define	ACTUATING_DRIVE_POSENCQC		ACTUATING_DRIVE_ENCRES		// Number of quadcounts in POSENCREV revolutions
+#define	ACTUATING_DRIVE_POSFACT_Z		3105000*1.136						// Number of revolutions of the input shaft
+#define	ACTUATING_DRIVE_POSFACT_N		37544						// Number of revolutions of the output shaft in POSFACT_Z revolutions of the input shaft
+#define	ACTUATING_DRIVE_FEEDREV			1							// Number of revolutions of the gear box output shaft
+#define	ACTUATING_DRIVE_FEEDDIST		36000						// Distance travelled (in user units) in FEEDREV revolutions of the gear box output shaft [mm]
+
+// Axis MACS control loop settings
+#define	ACTUATING_DRIVE_KPROP			1000
+#define	ACTUATING_DRIVE_KINT			50
+#define	ACTUATING_DRIVE_KDER			2000
+#define	ACTUATING_DRIVE_KILIM			0
+#define	ACTUATING_DRIVE_KILIMTIME		0
+#define	ACTUATING_DRIVE_BANDWIDTH		1000
+#define	ACTUATING_DRIVE_FFVEL			0
+#define	ACTUATING_DRIVE_KFFAC			0
+#define	ACTUATING_DRIVE_KFFDEC			0
+
+
+/*********************************************************************
+** Application Configuration
+*********************************************************************/
+
+
+// Homing
+#define ACT_DRIVE_HOME_VEL_SEARCH	50						// Velocity for homing while searching the zero index
+#define ACT_DRIVE_HOME_ACC_SEARCH	50						// Velocity for homing while searching the zero index
+#define ACT_DRIVE_HOME_DEC_SEARCH	1000					// Velocity for homing while searching the zero index
+#define ACT_DRIVE_HOME_VEL_ZERO		50						// Velocity for zero movement
+#define ACT_DRIVE_HOME_ACC_ZERO		50						// Velocity for zero movement
+#define ACT_DRIVE_HOME_DEC_ZERO		50						// Velocity for zero movement
+
+#define ACT_DRV_1_HOME_INDEX_OFFS	-6250					// -5144 Home offset for index position	[° 1/100]
+#define ACT_DRV_2_HOME_INDEX_OFFS	4676					// Home offset for index position	[° 1/100] 4822
+#define ACT_DRV_3_HOME_INDEX_OFFS	5734					// 4277 Home offset for index position	[° 1/100] - 5127 - 5373
+
+#define ACT_DRV_1_HOME_OFFS_CONF_1	-6000					// Home offset for zero movement, config 1	[° 1/100]
+#define ACT_DRV_2_HOME_OFFS_CONF_1	0						// Home offset for zero movement, config 1	[° 1/100]
+#define ACT_DRV_3_HOME_OFFS_CONF_1	6000					// Home offset for zero movement, config 1	[° 1/100]
+#define ACT_DRV_1_HOME_OFFS_CONF_2	(-2100+1249)			// Home offset for zero movement, config 2	[° 1/100]
+#define ACT_DRV_2_HOME_OFFS_CONF_2	(0-554)					// Home offset for zero movement, config 2	[° 1/100]
+#define ACT_DRV_3_HOME_OFFS_CONF_2	(2100-1295)				// Home offset for zero movement, config 2	[° 1/100]
+
+#define ACT_DRIVE_HOME_DIR_1		-1						// Homing direction of drive 1 -> -1 if the homing should be inverse
+#define ACT_DRIVE_HOME_DIR_2		-1						// Homing direction of drive 2 -> -1 if the homing should be inverse
+#define ACT_DRIVE_HOME_DIR_3		-1						// Homing direction of drive 3 -> -1 if the homing should be inverse
+
+// Rot Center
+#define ACT_DRIVE_ROT_CENTR_VEL		200						//75// 100 Velocity for rotate center point
+#define ACT_DRIVE_ROT_CENTR_ACC		100						//25// 50 Acceleration rotate center point
+#define ACT_DRIVE_ROT_CENTR_DEC		100						//50// 50 Deceleration rotate center point
+
+// Rot Wheel point
+#define ACT_DRIVE_ROT_WHEEL_VEL		200						//75// 100 Velocity for rotate wheel point
+#define ACT_DRIVE_ROT_WHEEL_ACC		100						//25// 50 Acceleration rotate wheel point
+#define ACT_DRIVE_ROT_WHEEL_DEC		100						//50// 50 Deceleration rotate wheel point
+
+// Straight drive tank
+#define ACT_DRIVE_TANK_VEL			200						// Velocity for rotate wheel point
+#define ACT_DRIVE_TANK_ACC			100						// Acceleration rotate wheel point
+#define ACT_DRIVE_TANK_DEC			100						// Deceleration rotate wheel point
+
+// Curve Drive
+#define ACT_DRIVE_CURVE_DRIVE_VEL	1000					// Velocity for curve drive 50 - 700
+#define ACT_DRIVE_CURVE_DRIVE_ACC	800						// Acceleration for curve drive 50 - 600
+#define ACT_DRIVE_CURVE_DRIVE_DEC	800						// Deceleration for curve drive 50 - 500
+
+// Manual Mode
+#define ACT_DRIVE_MANUAL_MODE_VEL	200						// Velocity for rotate center point
+#define ACT_DRIVE_MANUAL_MODE_ACC	100						// Acceleration rotate center point
+#define ACT_DRIVE_MANUAL_MODE_DEC	100						// Deceleration rotate center point
+
+// Unexpected stop of the vehicle (vehicle exit)
+#define ACT_DRIVE_VEHICLE_EXIT_DEC	1000
+#define WHEEL_DRIVE_VEHICLE_EXIT_DEC	1000

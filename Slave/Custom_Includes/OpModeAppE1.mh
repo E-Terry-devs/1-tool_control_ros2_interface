@@ -1,0 +1,46 @@
+/*********************************************************************
+**
+**                CanOpen Operational Mode: App E1
+**                --------------------------------
+*/
+
+SmState DriveModeAppE1
+    {
+    SIG_ENTRY           = DriveModeAppE1_Entry;
+    SIG_ENABLEOPERATION = DriveModeAppE1_EnableOperation;
+    }
+
+/*********************************************************************
+**
+**                  App E1 Mode State Functions
+**                  ---------------------------
+*/
+
+long DriveModeAppE1_Entry(long id, long signal, long event[], long data[])
+{
+    print("Axis ",id,": Enter state OperationEnabled - AppE1Mode");
+
+    data[DATA_State] = STATE_M_APPE1;
+
+    return(SmHandled);
+}
+
+long DriveModeAppE1_EnableOperation(long id, long signal, long event[], long data[])
+{
+    /*
+    ** If the Op Mode changes, then pass the event back to the OperationEnabled
+    ** superstate so that it can change the operation mode.
+    */
+
+
+    /*
+    ** If an AppE1 function is defined, then execute it.  Otherwise, just return
+    ** "SmHandled" to discard the event.
+    */
+
+#ifdef ZBCOS_MODOP_APP_E1_FUNCTION
+    return(ZBCOS_MODOP_APP_E1_FUNCTION(id, signal, event, data));
+#else
+    return(SmHandled);
+#endif
+}

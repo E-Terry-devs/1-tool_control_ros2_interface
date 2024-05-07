@@ -1,0 +1,98 @@
+/*********************************************************************
+**                CanOpen Utility Function Prototypes
+**                -----------------------------------
+*/
+
+long CanOpenGetCommand(long id, long data[]);
+long CanOpenSetStatus(long id, long data[]);
+long CanOpenPowerOn(long id);
+long CanOpenPowerOff(long id);
+long CanOpenEnableDrive(long id, long data[]);
+long CanOpenDisableDrive(long id);
+long CanOpenQuickStop(long id);
+
+long zbcos_start_linmove(long id, long data[]);
+long check_targetposition(long id, long data[]);
+long zbcos_restart_linmove(long id, long data[]);
+void zbcos_reset_multiaxcommand();
+
+/*********************************************************************
+** Miscellaneous defines
+*********************************************************************/
+#define ZBCOS_CNF_MAX_AXES      3       // Axis count (8 is the maximum supported by CanOpen).
+
+#define FALSE  0
+#define TRUE   1
+
+#define HOME_ACTIVE      0
+#define HOME_DONE        1
+#define HOME_ERROR      -1
+
+#define STATE_S_INITIAL                  1
+#define STATE_S_STATEMACHINE             2
+#define STATE_S_NOTREADYTOSWITCHON       3
+#define STATE_S_SWITCHONDISABLED         4
+#define STATE_S_READYTOSWITCHON          5
+#define STATE_S_SWITCHEDON               6
+#define STATE_S_OPERATIONENABLED         7
+#define STATE_S_QUICKSTOPACTIVE          8
+#define STATE_S_FAULT                    9
+#define STATE_S_FAULTREACTIONACTIVE     10
+#define STATE_M_NOTUSED3                11
+#define STATE_M_VELOCITY_RUN            12
+#define STATE_M_VELOCITY_HALT           13
+#define STATE_M_INTERPOLPOS             14
+#define STATE_SM_INTERPOLACTIVE         15
+#define STATE_M_POSITION_HALT           16
+#define STATE_M_POSITION_WAITSP         17
+#define STATE_M_POSITION_STARTED        18
+#define STATE_M_POSITION_READYRST       19
+#define STATE_M_POSITION_WAITTARGET     20
+#define STATE_M_POSITION_SPWAITING      21
+#define STATE_M_APPE0                   22
+#define STATE_M_APPE1                   23
+#define STATE_SM_HOMEREADY              24
+#define STATE_SM_HOMEHALT               25
+#define STATE_SM_HOMEDONE               26
+#define STATE_SM_HOMESEARCHSWITCH       27
+#define STATE_SM_HOMESEARCHINDEX        28
+#define STATE_SM_HOMEPOSINDEX           29
+#define STATE_SM_HOMEERROR              30
+
+/*********************************************************************
+**           Stuff from "zbcos_CanOpenStatemachine.mi"
+**           -----------------------------------------
+*/
+
+#define DEFAULT_QUICKSTOP_RAMP   800    // Default value for QuickStopRamp must not be zero.
+
+/***********************************************************/
+/* I/O Definitions                                         */
+/***********************************************************/
+//#define ZBCOS_CNF_O_CANOK     1
+
+/************************************************************/
+/* SYSVAR Indices                                           */
+/************************************************************/
+#define STAT_BIT_SINDEX         2               // Value of slave index within the status
+
+#define SYS_PFG_VFIN(ax)             Sysvar[0x01250000 + 85+  ax*0x100]     // Sysindex für Zielgeschwindigkeit
+#define SYS_PFG_VCMD(ax)             Sysvar[0x01250000 + 91+  ax*0x100]     // Sysindex für Sollgeschwindigkeit
+#define SYS_REG_TRACKERR(ax)         Sysvar[0x01250000 +  6+  ax*0x100]     // Sysindex für Trackerror
+#define SYS_PFG_MASTERTARGET(ax)     Sysvar[0x01250000 + 200+ ax*0x100]    // Sysindex to write Master Target and to read Corrected Slave Position
+
+/************************************************************/
+/* Hardware defines                                         */
+/************************************************************/
+#define ZBHW_VOLTAGELIMIT        10000   // mV - which have to be supplied to report Voltage ok
+
+/************************************************************/
+/* Global variables used                                    */
+/************************************************************/
+// Multi axes variables needed
+long ZbcosG_MultiAxesActiveCount;              // says that there is a multi axes command active (started) with so many involved
+long ZbcosG_MultiAxesCommandCount;             // used to count the axes which are part of the command until the command is complete
+long ZbcosG_MultiAxesNo[ZBCOS_CNF_MAX_AXES];   // remembers which axes numbers are part of the multiaxes command
+long ZbcosG_MultiAxesPart[ZBCOS_CNF_MAX_AXES]; // remembers if the axes was part of a multiaxes command
+long ZbcosG_MultiAxesPos[ZBCOS_CNF_MAX_AXES];  // remembers the position where all axes have to go
+long ZbcosG_NullArray[ZBCOS_CNF_MAX_AXES];     // null array for fast reset of other arrays

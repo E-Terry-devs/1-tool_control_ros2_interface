@@ -1,0 +1,120 @@
+#define DEGREE_AS_UU 1
+#define PRINT_POSITION 0
+#define MAX_RPM 1
+void updateWheelDriveParam(void);
+long eTerry_wheelDrive_tune(void)
+{
+	long i;
+	#if DEGREE_AS_UU
+		long dist = -180; 		// [°]
+		AXE_PARAM(WHEEL_DRIVE_1,FEEDDIST)=360;
+		AXE_PARAM(WHEEL_DRIVE_2,FEEDDIST)=360;
+		AXE_PARAM(WHEEL_DRIVE_3,FEEDDIST)=360;
+	#else
+		long dist = 1000; 		// [mm]
+	#endif
+
+	#if PRINT_POSITION
+		InterruptSetup(PERIOD, printPosition,2000);
+	#endif
+
+	curkprop 	= HWAMP_PARAM(WHEEL_DRIVE_2,HWAMP_CURKPROP);
+	curkint 	= HWAMP_PARAM(WHEEL_DRIVE_2,HWAMP_CURKINT);
+	curkilim 	= HWAMP_PARAM(WHEEL_DRIVE_2,HWAMP_CURKILIM);
+	velkprop 	= HWAMP_PARAM(WHEEL_DRIVE_2,HWAMP_VELKPROP);
+	velkint 	= HWAMP_PARAM(WHEEL_DRIVE_2,HWAMP_VELKINT);
+	velkilim 	= HWAMP_PARAM(WHEEL_DRIVE_2,HWAMP_VELKILIM);
+
+	print("Open Break and wait 5000 ms - if not open do a user abort");
+	DO_BREAK_WD_DRIVE_1(1);
+	Delay(2000);
+	DO_BREAK_WD_DRIVE_2(1);
+	Delay(2000);
+	DO_BREAK_WD_DRIVE_3(1);
+
+	Delay(2000);
+
+	print("Enable Axis");
+	AxisControl(WHEEL_DRIVE_1,ON,WHEEL_DRIVE_2,ON,WHEEL_DRIVE_3,ON);
+	Vel(AXALL,200);
+	Acc(AXALL,50);
+	Dec(AXALL,50);
+
+	//InterruptSetup(PERIOD, updateWheelDriveParam,1000);
+
+	#if !MAX_RPM
+
+	while(1)
+	{
+		AxisPosRelStart(	WHEEL_DRIVE_1,dist,
+							WHEEL_DRIVE_2,0,
+							WHEEL_DRIVE_3,dist);
+		AxisWaitReached(	WHEEL_DRIVE_1);
+//		AxisPosRelStart(	WHEEL_DRIVE_1,-dist,
+//							WHEEL_DRIVE_2,-0,
+//							WHEEL_DRIVE_3,-dist);
+//		AxisWaitReached(	WHEEL_DRIVE_1);
+	}
+
+
+	#else
+
+	//for(i=5;i>=0;i--)
+	while(1)
+	{
+		print("Start, move with constant vel → positive");
+		Cvel(WHEEL_DRIVE_1, 200,
+						WHEEL_DRIVE_2, 200,
+						WHEEL_DRIVE_3, 200);
+		AxisCvelStart(	WHEEL_DRIVE_1,
+						WHEEL_DRIVE_2,
+						WHEEL_DRIVE_3);
+		Delay(5000);
+		AxisCvelStop(	WHEEL_DRIVE_1,
+						WHEEL_DRIVE_2,
+						WHEEL_DRIVE_3);
+		Delay(5000);
+		Cvel(WHEEL_DRIVE_1, -200,
+						WHEEL_DRIVE_2, -200,
+						WHEEL_DRIVE_3, -200);
+		AxisCvelStart(	WHEEL_DRIVE_1,
+						WHEEL_DRIVE_2,
+						WHEEL_DRIVE_3);
+		Delay(5000);
+
+		AxisCvelStop(	WHEEL_DRIVE_1,
+						WHEEL_DRIVE_2,
+						WHEEL_DRIVE_3);
+		Delay(5000);
+		/*print("Start, move with constant vel → positive");
+		Cvel(WHEEL_DRIVE_3, 100);
+		AxisCvelStart(WHEEL_DRIVE_3);
+		Delay(5000);
+		AxisCvelStop(WHEEL_DRIVE_3);
+		Delay(5000);
+        print("Start, move with constant vel → positive");
+		Cvel(WHEEL_DRIVE_3, -100);
+		AxisCvelStart(WHEEL_DRIVE_3);
+		Delay(5000);
+		AxisCvelStop(WHEEL_DRIVE_3);
+		Delay(5000);*/
+//		print("Start, move with constant vel → negative");
+//		Cvel(AXALL, -WD80_754962_MAX_RPM);
+//		AxisCvelStart(	WHEEL_DRIVE_1,
+//						WHEEL_DRIVE_2,
+//						WHEEL_DRIVE_3);
+//
+//		Delay(10000);
+		print(i, " repetitions to go \n");
+	}
+
+	#endif
+	print("Program done, Axis OFF ");
+	AxisControl(AXALL, OFF);
+    return(1);
+}
+
+void updateWheelDriveParam(void)
+{
+	setControllerParam(WHEEL_DRIVE_2, S_AX_WHEEL_DRVE);
+}

@@ -1,0 +1,1905 @@
+/*********************************************************************
+** StateMachine Subfile
+**
+** This file is included inside the main state machine and
+** contains the complete state "running". The homing must be complete
+** for this state to be reached.
+**
+*********************************************************************/
+/*********************************************************************
+** State Definitions
+*********************************************************************/
+void saveLastDirection(void);
+void setConstantVelocity(void);
+void setSlowVelocity(void);
+void setVelWheelDrv_RotWheel(long wheelVelF[], long invert, long boostF);
+void setRelProfileWheelDrv(long wheelVelF[], long direction, long velMaster, long distMaster);
+long checkRelProfilWheelDrv(long targetPosition[3]);
+long calcCurvePathLength(long diameter, long degree);
+void setVelWheelDrv_RotCentr(long boostF);
+void setVelWheelDrv_TankSteering();
+
+void invertVehicleMotion(void);
+
+SmState Running
+{
+	SIG_INIT	=
+	{
+		return(SmTrans(->RemoteControl));
+	}
+	SIG_ENTRY	=
+	{
+		print("SM: Running - Entry");
+		USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_RUNNING;
+	}
+
+	SIG_MANUAL_TRAV_3_1 	= SmTrans(->ManualControl);
+	SIG_MANUAL_TRAV_3_2 	= SmTrans(->ManualControl);
+	SIG_MANUAL_MODE 	    = SmTrans(->ManualControl);
+	SIG_MANUAL_EBOX_1		= {} 	// Do nothing
+	SIG_MANUAL_EBOX_2		= {} 	// Do nothing
+	SIG_SEMI_AUTO_CURVE		=
+	{
+		if(!DI_SEMI_AUTO_ON && DI_SEMI_AUTO_CURVE)
+		{
+			print("Semi-Automatic: Set new curve direction");
+			gSemiAutoDirection=!gSemiAutoDirection;
+			// if(gSemiAutoDirection)
+			// 	SmPublish(SIG_LED_ON, LED_PERIOD_SEMI_AUTO_CNF, 1,0,1);
+			// else
+			// 	SmPublish(SIG_LED_ON, LED_PERIOD_SEMI_AUTO_CNF, 0,1,0);
+
+		}
+	}
+	SIG_VEHICLE_ENABLE   	=
+	{
+		//SmPublish(SIG_LED_ON, LED_PERIOD_WAIT, 1,1,1);
+		return(SmTrans(<-*->MotorsOff));
+	}
+
+	SmState RemoteControl
+	{
+		SIG_INIT	=
+		{
+			Acc(WHEEL_DRIVE_1,WHEEL_DRIVE_ACC,WHEEL_DRIVE_2,WHEEL_DRIVE_ACC,WHEEL_DRIVE_3,WHEEL_DRIVE_ACC);
+			Dec(WHEEL_DRIVE_1,WHEEL_DRIVE_DEC,WHEEL_DRIVE_2,WHEEL_DRIVE_DEC,WHEEL_DRIVE_3,WHEEL_DRIVE_DEC);
+			gMotorSlowModeOn=1;
+			return(SmTrans(->Stop));
+		}
+		SIG_EXIT	=
+		{
+			gMotorRCEnable=0;
+			gMotorManEnable=0;
+		}
+		SIG_SEMI_AUTO_ON		=
+		{
+			if(!DI_SEMI_AUTO_ON)
+				return(SmTrans(->Stop));
+		}
+		SIG_IDLE	=
+		{
+			if(gConfigTyp==MECH_CONFIG_FOLD)
+			{
+
+			}
+			else
+			{
+				if(gMotorRCEnable==1)
+				{
+					if(REMOTE_AI_ON==1)
+					{
+						gVelocityVehicle 	= scaleJoystickInput(gVelocityMonitor,BOOST_CURVE_NBR, AI_JOYSTICK_BOOST_UU, AI_JOYSTICK_STEERING_UU_SWING, AI_JOYSTICK_BOOST_OFFSET);
+						gAngleVehicle 		= scaleJoystickInput(gAngleMonitor,STEERING_CURVE_NBR, AI_JOYSTICK_STEERING_UU, AI_JOYSTICK_STEERING_UU_SWING, AI_JOYSTICK_STEERING_OFFSET);
+
+					}
+					else
+					{
+						gVelocityVehicle 	= scaleJoystickInput(gVelocityMonitor,BOOST_CURVE_NBR, AI_JOYSTICK_BOOST_UU, 0, AI_JOYSTICK_BOOST_OFFSET);;
+						gAngleVehicle 		= scaleJoystickInput(gAngleMonitor,STEERING_CURVE_NBR, AI_JOYSTICK_STEERING_UU, 0, AI_JOYSTICK_STEERING_OFFSET);
+					}
+
+					setSlowVelocity();
+					setConstantVelocity();
+					invertVehicleMotion();
+				}
+				else if(gMotorManEnable==1)
+				{
+
+				}
+
+				USER_PARAM(USR_MONITOR_JOISTICK_BOOST)= gVelocityVehicle;
+				USER_PARAM(USR_MONITOR_JOISTICK_STEERING)= gAngleVehicle;
+			}
+		}
+
+		SmState ChangeMovement
+		{
+			SIG_ENTRY	=
+			{
+				print("SM: ChangeMovement - Entry");
+
+				Acc(WHEEL_DRIVE_1,WHEEL_DRIVE_ACC,WHEEL_DRIVE_2,WHEEL_DRIVE_ACC,WHEEL_DRIVE_3,WHEEL_DRIVE_ACC);
+				Dec(WHEEL_DRIVE_1,WHEEL_DRIVE_DEC,WHEEL_DRIVE_2,WHEEL_DRIVE_DEC,WHEEL_DRIVE_3,WHEEL_DRIVE_DEC);
+
+			}
+			SIG_IDLE	=
+			{
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_CHANGE_MOVE;
+
+				if(ACT_DRIVE_BREAK_CLOSE)
+				{
+					if(! DI_SEMI_AUTO_ON)
+					{
+						// if(DI_ROT_CENTRALPOINT&&ALL_DRIVE_NO_MOVE)
+						// 	return(SmTrans(RotCentralPoint));
+						// else if(DI_CURVE_DRIVE&&(gVelocityVehicle!=0))
+						// 	return(SmTrans(CurveDrive));
+						// else if(((gAngleVehicle > (AI_JOYSTICK_STEERING_UU-AI_JOYSTICK_BOOST_UU_SWING)/AI_JOYSTICK_MASTER_SLAVE_FAKT || gAngleVehicle < (-AI_JOYSTICK_STEERING_UU+AI_JOYSTICK_BOOST_UU_SWING)/AI_JOYSTICK_MASTER_SLAVE_FAKT) && gVelocityVehicle == 0)&&ALL_DRIVE_NO_MOVE)
+						// 	return(SmTrans(RotWheelPoint));
+						// else if(gVelocityVehicle!=0)
+						// 	return(SmTrans(StraightDrive));
+
+						if(DI_ROT_CENTRALPOINT&&ALL_DRIVE_NO_MOVE)
+							return(SmTrans(RotCentralPoint));
+						else if(DI_CURVE_DRIVE&&(gVelocityVehicle!=0))
+							return(SmTrans(CurveDrive));
+						else if(gVelocityVehicle!=0)
+							return(SmTrans(StraightDrive));
+					}
+					else
+					{
+						if(DI_SEMI_AUTO_CURVE)
+						{
+							return(SmTrans(RotWheelPoint));
+						}
+						else
+						{
+							return(SmTrans(StraightDrive));
+						}
+					}
+				}
+				return(SmNotHandled);
+			}
+		}
+
+		SmState Stop
+		{
+			SIG_ENTRY	=
+			{
+				print("SM: Stop - Entry");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_STOP;
+				//SmPublish(SIG_LED_ON, LED_PERIOD_STOP, 1, 1, 1);
+
+				Acc(WHEEL_DRIVE_1,WHEEL_DRIVE_ACC,WHEEL_DRIVE_2,WHEEL_DRIVE_ACC,WHEEL_DRIVE_3,WHEEL_DRIVE_ACC);
+				Dec(WHEEL_DRIVE_1,WHEEL_DRIVE_DEC,WHEEL_DRIVE_2,WHEEL_DRIVE_DEC,WHEEL_DRIVE_3,WHEEL_DRIVE_DEC);
+
+				AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+				AxisStop(ACTUATING_DRIVE_1,ACTUATING_DRIVE_2,ACTUATING_DRIVE_3);
+			}
+			SIG_IDLE	=
+			{
+				gVelocityMonitor=0;
+				//todo gVelocityVehicle=0;
+
+				if(ALL_DRIVE_NO_MOVE)
+				{
+					SmPublish(SIG_ACT_BREAK,0,0,0);
+					SmPublish(SIG_WHEEL_BRAKE,0,0,0);
+					return(SmTrans(ChangeMovement));
+				}
+			}
+
+		}
+		SmState StraightDrive
+		{
+			SIG_INIT	=
+			{
+				// if(DI_INVERT_MODE)
+				// 	//SmPublish(SIG_LED_ON, LED_PERIOD_STOP, 0, 1, 1);
+				// else
+					//SmPublish(SIG_LED_ON, LED_PERIOD_STOP, 1, 1, 0);
+
+				#if (ACT_DRIVE_TANKSTEERING_ON==0)
+				{
+					return(SmTrans(->StraightDrive_ActDriveCorrection));
+				}
+				#else
+				{
+					return(SmTrans(->StraightDrive_Tanksteering->BreakOpen));
+				}
+				#endif
+			}
+			SIG_ENTRY	=
+			{
+				print("SM: StraightDrive - Entry");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_STRAIGHT_DRIVE;
+
+				if(!WHEEL_DRIVE_BRAKE_OPEN)
+						SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+
+				Cvel(	WHEEL_DRIVE_1, 0,
+						WHEEL_DRIVE_2, 0,
+						WHEEL_DRIVE_3, 0);
+				AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+
+				// Set constant velocity in automode
+				gSemiAutoConstantVel=1;
+
+			}
+			SIG_EXIT	=
+			{
+				gSemiAutoConstantVel=0;
+			}
+			SIG_IDLE	=
+			{
+				saveLastDirection();
+
+				if(! DI_SEMI_AUTO_ON)
+				{
+					if(DI_ROT_CENTRALPOINT || DI_CURVE_DRIVE  || (gVelocityVehicle == 0))
+						return(SmTrans(Stop));
+				}
+				else if(DI_SEMI_AUTO_CURVE)
+				{
+					return(SmTrans(Stop));
+				}
+				return(SmNotHandled);
+			}
+			SmState StraightDrive_Tanksteering
+			{
+				SIG_ENTRY	=
+				{
+					print("SM: StraightDrive_Tanksteering - Entry");
+					Vel(ACTUATING_DRIVE_1,ACT_DRIVE_TANK_VEL,ACTUATING_DRIVE_2,ACT_DRIVE_TANK_VEL,ACTUATING_DRIVE_3,ACT_DRIVE_TANK_VEL);
+					Acc(ACTUATING_DRIVE_1,ACT_DRIVE_TANK_ACC,ACTUATING_DRIVE_2,ACT_DRIVE_TANK_ACC,ACTUATING_DRIVE_3,ACT_DRIVE_TANK_ACC);
+					Dec(ACTUATING_DRIVE_1,ACT_DRIVE_TANK_DEC,ACTUATING_DRIVE_2,ACT_DRIVE_TANK_DEC,ACTUATING_DRIVE_3,ACT_DRIVE_TANK_DEC);
+				}
+
+				SmState BreakOpen
+				{
+					SIG_ENTRY =
+					{
+						print("SM: StraightDrive_BreakOpen - Entry");
+						if((! ACT_DRIVE_BREAK_OPEN)&&(Cpos(ACTUATING_DRIVE_1)!=0 || Cpos(ACTUATING_DRIVE_2)!=0 || Cpos(ACTUATING_DRIVE_3)!=0) )
+							SmPublish(SIG_ACT_BREAK,1,1,1);
+
+					}
+					SIG_IDLE	=
+					{
+						if(ACT_DRIVE_BREAK_OPEN)
+						{
+							print("SM: StraightDrive_BreakOpen - BreaksAreOpen");
+							AxisControl(WHEEL_DRIVE_1, OFF, WHEEL_DRIVE_2, OFF, WHEEL_DRIVE_3, OFF);
+							AxisPosAbsStart(ACTUATING_DRIVE_1,0,ACTUATING_DRIVE_2,0,ACTUATING_DRIVE_3,0);
+							return(SmTrans(WaitForActDrivePos));
+						}else if (Cpos(ACTUATING_DRIVE_1)==0 && Cpos(ACTUATING_DRIVE_2)==0 && Cpos(ACTUATING_DRIVE_3)==0)
+							return(SmTrans(BreakClose));
+						else
+							return(SmNotHandled);
+					}
+				}
+				SmState WaitForActDrivePos
+				{
+					SIG_ENTRY	=
+					{
+						print("SM: StraightDrive_WaitForActDrivePos - Entry");
+
+					}
+
+					SIG_IDLE	=
+					{
+						if(ACTUTATING_DRIVE_TAR_RECH)
+
+							return(SmTrans(BreakClose));
+						else
+							return(SmNotHandled);
+					}
+				}
+				SmState BreakClose
+				{
+					SIG_ENTRY =
+					{
+						SmPublish(SIG_ACT_BREAK,0,0,0);
+					}
+					SIG_IDLE	=
+					{
+						if(ACT_DRIVE_BREAK_CLOSE)
+							return(SmTrans(TankReady));
+						else
+							return(SmNotHandled);
+					}
+				}
+				SmState TankReady
+				{
+					SIG_ENTRY	=
+					{
+						print("SM: StraightDrive_TankReady - Entry");
+						if(!WHEEL_DRIVE_BRAKE_OPEN)
+						SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+						AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+					}
+					SIG_IDLE	=
+					{
+						AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+
+						setVelWheelDrv_TankSteering();
+						return(SmNotHandled);
+					}
+				}
+			}
+			SmState StraightDrive_ActDriveCorrection
+			{
+				SIG_ENTRY =
+				{
+					print("SM: StraightDrive_ActDriveCorrection - Entry");
+					SmPublish(SIG_ACT_BREAK,1,1,1);
+					if(!WHEEL_DRIVE_BRAKE_OPEN)
+						SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+				}
+				SIG_IDLE	=
+				{
+					if(ACT_DRIVE_BREAK_OPEN)
+					{
+						AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+
+						AchermannSteering_Calc(setPivotPointX_straightDrive(),setPivotPointY_straightDrive(),0);
+
+						AxisPosAbsStart(	ACTUATING_DRIVE_1,gAchSteering_angle_actuator[0],
+						ACTUATING_DRIVE_2,gAchSteering_angle_actuator[1],
+						ACTUATING_DRIVE_3,gAchSteering_angle_actuator[2]);
+
+						Cvel(	WHEEL_DRIVE_1,gVelocityVehicle*gAchSteering_fakt[0],
+								WHEEL_DRIVE_2, gVelocityVehicle*gAchSteering_fakt[1],
+								WHEEL_DRIVE_3, gVelocityVehicle*gAchSteering_fakt[2]);
+					}
+					return(SmNotHandled);
+				}
+			}
+		}
+		SmState CurveDrive
+		{
+			SIG_INIT	=
+			{
+				SmPublish(SIG_LED_ON, LED_PERIOD_STOP, 1, 1, 1);
+				return(SmTrans(->BreakOpen));
+			}
+			SIG_ENTRY	=
+			{
+				print("SM: CurveDrive - Entry");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_CURVE_DRIVE;
+
+				Vel(ACTUATING_DRIVE_1,ACT_DRIVE_CURVE_DRIVE_VEL,ACTUATING_DRIVE_2,ACT_DRIVE_CURVE_DRIVE_VEL,ACTUATING_DRIVE_3,ACT_DRIVE_CURVE_DRIVE_VEL);
+				Acc(ACTUATING_DRIVE_1,ACT_DRIVE_CURVE_DRIVE_ACC,ACTUATING_DRIVE_2,ACT_DRIVE_CURVE_DRIVE_ACC,ACTUATING_DRIVE_3,ACT_DRIVE_CURVE_DRIVE_ACC);
+				Dec(ACTUATING_DRIVE_1,ACT_DRIVE_CURVE_DRIVE_DEC,ACTUATING_DRIVE_2,ACT_DRIVE_CURVE_DRIVE_DEC,ACTUATING_DRIVE_3,ACT_DRIVE_CURVE_DRIVE_DEC);
+			}
+
+			SmState BreakOpen
+			{
+				SIG_ENTRY =
+				{
+					print("SM: CurveDrive_BreakOpen - Entry");
+					if(! ACT_DRIVE_BREAK_OPEN)
+						SmPublish(SIG_ACT_BREAK,1,1,1);
+					if(!WHEEL_DRIVE_BRAKE_OPEN)
+						SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+
+				}
+				SIG_IDLE	=
+				{
+					if(ACT_DRIVE_BREAK_OPEN && WHEEL_DRIVE_BRAKE_OPEN)
+					{
+						print("SM: CurveDrive_BreakOpen - BreaksAreOpen");
+						AxisControl(WHEEL_DRIVE_1, OFF, WHEEL_DRIVE_2, OFF, WHEEL_DRIVE_3, OFF);
+						AxisPosAbsStart(ACTUATING_DRIVE_1,0,ACTUATING_DRIVE_2,0,ACTUATING_DRIVE_3,0);
+						return(SmTrans(WaitForActDrivePos));
+					}else
+						return(SmNotHandled);
+				}
+			}
+			SmState WaitForActDrivePos
+			{
+				SIG_ENTRY	=
+				{
+					print("SM: CurveDrive_WaitForActDrivePos - Entry");
+				}
+
+				SIG_IDLE	=
+				{
+					if(ACTUTATING_DRIVE_TAR_RECH)
+						return(SmTrans(Drive));
+					else
+						return(SmNotHandled);
+				}
+			}
+			SmState Drive
+			{
+				SIG_ENTRY	=
+				{
+					print("SM: CurveDrive_Drive - Entry");
+					if(!WHEEL_DRIVE_BRAKE_OPEN)
+						SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+					AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+				}
+				SIG_IDLE	=
+				{
+					if(ACT_DRIVE_BREAK_OPEN)
+					{
+						AchermannSteering_Calc(setPivotPointX_curveDrive(),setPivotPointY_curveDrive(),0);
+						AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+						AxisPosAbsStart(	ACTUATING_DRIVE_1,gAchSteering_angle_actuator[0],
+											ACTUATING_DRIVE_2,gAchSteering_angle_actuator[1],
+											ACTUATING_DRIVE_3,gAchSteering_angle_actuator[2]);
+
+						Acc(		WHEEL_DRIVE_1,WHEEL_DRIVE_ACC*gAchSteering_fakt[0],
+									WHEEL_DRIVE_2,WHEEL_DRIVE_ACC*gAchSteering_fakt[1],
+									WHEEL_DRIVE_3,WHEEL_DRIVE_ACC*gAchSteering_fakt[2]);
+						Dec(		WHEEL_DRIVE_1,WHEEL_DRIVE_DEC*gAchSteering_fakt[0],
+									WHEEL_DRIVE_2,WHEEL_DRIVE_DEC*gAchSteering_fakt[1],
+									WHEEL_DRIVE_3,WHEEL_DRIVE_DEC*gAchSteering_fakt[2]);
+
+						if(DI_SET_CONST_SPEED)
+						{
+							Cvel(	WHEEL_DRIVE_1, gVelocityVehicle*gAchSteering_fakt[0],
+									WHEEL_DRIVE_2, gVelocityVehicle*gAchSteering_fakt[1],
+									WHEEL_DRIVE_3, gVelocityVehicle*gAchSteering_fakt[2]);
+						}
+						else
+						{
+							Cvel(	WHEEL_DRIVE_1, WHEEL_DRIVE_CURVE_DRIVE_FAKT*gVelocityVehicle*gAchSteering_fakt[0],
+									WHEEL_DRIVE_2, WHEEL_DRIVE_CURVE_DRIVE_FAKT*gVelocityVehicle*gAchSteering_fakt[1],
+									WHEEL_DRIVE_3, WHEEL_DRIVE_CURVE_DRIVE_FAKT*gVelocityVehicle*gAchSteering_fakt[2]);
+						}
+					}
+					saveLastDirection();
+					if(DI_ROT_CENTRALPOINT || !DI_CURVE_DRIVE || DI_SEMI_AUTO_ON) return(SmTrans(<-*->Stop));
+
+
+					return(SmNotHandled);
+				}
+			}
+		}
+		SmState RotCentralPoint
+		{
+			long ledOnLeft,ledOnRight;
+
+			SIG_ENTRY	=
+			{
+				print("SM: RotCentralPoint - Entry");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_ROTCENTER;
+
+				Vel(ACTUATING_DRIVE_1,ACT_DRIVE_ROT_CENTR_VEL,ACTUATING_DRIVE_2,ACT_DRIVE_ROT_CENTR_VEL,ACTUATING_DRIVE_3,ACT_DRIVE_ROT_CENTR_VEL);
+				Acc(ACTUATING_DRIVE_1,ACT_DRIVE_ROT_CENTR_ACC,ACTUATING_DRIVE_2,ACT_DRIVE_ROT_CENTR_ACC,ACTUATING_DRIVE_3,ACT_DRIVE_ROT_CENTR_ACC);
+				Dec(ACTUATING_DRIVE_1,ACT_DRIVE_ROT_CENTR_DEC,ACTUATING_DRIVE_2,ACT_DRIVE_ROT_CENTR_DEC,ACTUATING_DRIVE_3,ACT_DRIVE_ROT_CENTR_DEC);
+
+				Cvel(	WHEEL_DRIVE_1, 0,
+						WHEEL_DRIVE_2, 0,
+						WHEEL_DRIVE_3, 0);
+				AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+
+				ledOnLeft=0;
+				ledOnRight=0;
+
+			}
+			SIG_INIT	=
+			{
+				return(SmTrans(->WaitForBreakOpen));
+			}
+			SIG_IDLE	=
+			{
+				if( ! DI_ROT_CENTRALPOINT|| DI_SEMI_AUTO_ON) return(SmTrans(Stop));
+
+				return(SmNotHandled);
+			}
+
+			SmState RotCentralPoint_Drive
+			{
+				SIG_ENTRY	=
+				{
+					print("SM: RotCentralPoint_Drive - Entry");
+					if(!WHEEL_DRIVE_BRAKE_OPEN)
+						SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+					AxisControl(WHEEL_DRIVE_1,ON);
+					AxisControl(WHEEL_DRIVE_2,OFF);
+					AxisControl(WHEEL_DRIVE_3,ON);
+
+					Cvel(	WHEEL_DRIVE_1, 0,
+							WHEEL_DRIVE_2, 0,
+							WHEEL_DRIVE_3, 0);
+					AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+
+					SmPublish(SIG_ACT_BREAK,0,0,0);
+
+				}
+				SIG_IDLE	=
+				{
+					if(ACT_DRIVE_BREAK_CLOSE)
+					{
+						setVelWheelDrv_RotCentr(gConfRotCentrBoostF);
+					}
+					if(gVelocityVehicle>0 && ledOnLeft != 1)
+					{
+						ledOnLeft=1;
+						ledOnRight=0;
+						SmPublish(SIG_LED_FLOW_LEFT, LED_PERIOD_ROT_CENTER);
+					}
+					else if(gVelocityVehicle<0 && ledOnRight != 1)
+					{
+						ledOnLeft=0;
+						ledOnRight=1;
+						SmPublish(SIG_LED_FLOW_RIGHT, LED_PERIOD_ROT_CENTER);
+					}
+
+					return(SmNotHandled);
+				}
+			}
+			SmState WaitForBreakOpen
+			{
+
+				SIG_ENTRY =
+					{
+						if(! ACT_DRIVE_BREAK_OPEN)
+							SmPublish(SIG_ACT_BREAK,1,1,1);
+						if(!WHEEL_DRIVE_BRAKE_OPEN)
+							SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+					}
+				SIG_IDLE	=
+				{
+					if(ACT_DRIVE_BREAK_OPEN)
+						return(SmTrans(RotCentralPoint_1));
+					else
+						return(SmNotHandled);
+				}
+			}
+			SmState RotCentralPoint_1
+			{
+				SIG_ENTRY =
+				{
+					print("SM: RotCentralPoint_1 - Entry");
+
+					AxisPosAbsStart(ACTUATING_DRIVE_1,gConfRotCentrAct[0]);
+					AxisControl(WHEEL_DRIVE_1,OFF);
+
+				}
+				SIG_IDLE =
+				{
+					if( ! DI_ROT_CENTRALPOINT) return(SmTrans(<-RotCentralPoint));
+
+
+					if(AxisTargetReached(ACTUATING_DRIVE_1))
+					{
+						if(ALL_DRIVE_NO_MOVE)
+						{
+							print("Wheel 1 Finish");
+							return(SmTrans(RotCentralPoint_2));
+						}
+					}
+					else
+					{
+						return(SmHandled);
+					}
+				}
+
+			}
+			SmState RotCentralPoint_2
+			{
+				SIG_ENTRY =
+				{
+					print("SM: RotCentralPoint_2 - Entry");
+
+					AxisPosAbsStart(ACTUATING_DRIVE_2,gConfRotCentrAct[1]);
+					AxisControl(WHEEL_DRIVE_2,OFF);
+
+				}
+				SIG_IDLE =
+				{
+					if( ! DI_ROT_CENTRALPOINT) return(SmTrans(<-RotCentralPoint));
+
+
+					if(AxisTargetReached(ACTUATING_DRIVE_2))
+					{
+						if(ALL_DRIVE_NO_MOVE)
+						{
+							print("Wheel 2 Finish");
+							return(SmTrans(RotCentralPoint_3));
+						}
+					}
+					else
+					{
+						return(SmHandled);
+					}
+				}
+
+			}
+			SmState RotCentralPoint_3
+			{
+				SIG_ENTRY =
+				{
+					print("SM: RotCentralPoint_3 - Entry");
+					AxisPosAbsStart(ACTUATING_DRIVE_3,gConfRotCentrAct[2]);
+					AxisControl(WHEEL_DRIVE_3,OFF);
+				}
+				SIG_IDLE =
+				{
+					if( ! DI_ROT_CENTRALPOINT) return(SmTrans(<-RotCentralPoint));
+
+					if(AxisTargetReached(ACTUATING_DRIVE_3))
+					{
+						if(ALL_DRIVE_NO_MOVE)
+						{
+							print("Wheel 3 Finish");
+							return(SmTrans(RotCentralPoint_Drive));
+						}
+					}
+					else
+					{
+						return(SmHandled);
+					}
+				}
+			}
+		}
+		SmState RotWheelPoint
+		{
+			long movementState=0;
+			SIG_INIT	=
+			{
+				return(SmTrans(->WaitForBreakOpen));
+			}
+			SIG_ENTRY	=
+			{
+				print("SM: RotWheelPoint - Entry");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_RUNNING;
+
+				Vel(ACTUATING_DRIVE_1,ACT_DRIVE_ROT_WHEEL_VEL,ACTUATING_DRIVE_2,ACT_DRIVE_ROT_WHEEL_VEL,ACTUATING_DRIVE_3,ACT_DRIVE_ROT_WHEEL_VEL);
+				Acc(ACTUATING_DRIVE_1,ACT_DRIVE_ROT_WHEEL_ACC,ACTUATING_DRIVE_2,ACT_DRIVE_ROT_WHEEL_ACC,ACTUATING_DRIVE_3,ACT_DRIVE_ROT_WHEEL_ACC);
+				Dec(ACTUATING_DRIVE_1,ACT_DRIVE_ROT_WHEEL_DEC,ACTUATING_DRIVE_2,ACT_DRIVE_ROT_WHEEL_DEC,ACTUATING_DRIVE_3,ACT_DRIVE_ROT_WHEEL_DEC);
+
+				Cvel(	WHEEL_DRIVE_1, 0,
+						WHEEL_DRIVE_2, 0,
+						WHEEL_DRIVE_3, 0);
+
+				movementState=0;
+			}
+			SIG_IDLE	=
+			{
+				if(!DI_SEMI_AUTO_ON)
+				{
+					if(DI_ROT_CENTRALPOINT || gAngleVehicle == 0) return(SmTrans(Stop));
+				}
+				else if(!DI_SEMI_AUTO_CURVE)
+				{
+					gSemiAutoDirection=!gSemiAutoDirection;
+					return(SmTrans(Stop));
+				}
+
+				return(SmNotHandled);
+			}
+			SmState WaitForBreakOpen
+			{
+				SIG_ENTRY =
+					{
+						if(! ACT_DRIVE_BREAK_OPEN)
+							SmPublish(SIG_ACT_BREAK,1,1,1);
+					}
+				SIG_IDLE	=
+				{
+					if(ACT_DRIVE_BREAK_OPEN)
+						return(SmTrans(SetRotWheelMode));
+					else
+						return(SmNotHandled);
+				}
+			}
+			SmState SetRotWheelMode
+			{
+				SIG_IDLE	=
+				{
+					if(!DI_SEMI_AUTO_ON)
+					{
+						if(gAngleVehicle > 0)
+						{
+							if(gLastDirection==1)
+								return(SmTrans(RotWheel_2));
+							else
+								return(SmTrans(RotWheel_2));
+						}
+						else
+						{
+							if(gLastDirection==1)
+								return(SmTrans(RotWheel_1));
+							else
+								return(SmTrans(RotWheel_3));
+						}
+					}
+					else
+					{
+						if(gSemiAutoDirection)
+						{
+							if(gLastDirection==1)
+								return(SmTrans(RotWheel_1));
+							else
+								return(SmTrans(RotWheel_3));
+						}
+						else
+							return(SmTrans(RotWheel_2));
+
+					}
+					return(SmNotHandled);
+				}
+			}
+			SmState RotWheel_1
+			{
+				SIG_INIT	=
+				{
+					SmPublish(SIG_LED_ON, LED_PERIOD_ROT_WHEEL, 1, 0, 0);
+					return(SmTrans(->WaitForActDrivePos));
+				}
+
+				SIG_ENTRY	=
+				{
+					print("SM: RotWheel_1 - Entry");
+					USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_ROTWHEEL_1;
+
+					AxisControl(WHEEL_DRIVE_1,ON,WHEEL_DRIVE_2,OFF,WHEEL_DRIVE_3,OFF);
+					AxisPosAbsStart(ACTUATING_DRIVE_1,gConfRotWheelAng_1[0],ACTUATING_DRIVE_2,gConfRotWheelAng_1[1],ACTUATING_DRIVE_3,gConfRotWheelAng_1[2]);
+
+				}
+				SmState WaitForActDrivePos
+				{
+					SIG_ENTRY	=
+					{
+						print("SM: RotWheel_1_WaitForActDrivePos - Entry");
+
+					}
+					SIG_IDLE	=
+					{
+						if(ACTUTATING_DRIVE_TAR_RECH)
+						{
+							SmPublish(SIG_ACT_BREAK,0,0,0);
+							return(SmTrans(Drive));
+						}
+						else
+							return(SmNotHandled);
+					}
+				}
+				SmState Drive
+				{
+					SIG_ENTRY	=
+					{
+						print("SM: RotWheel_1_Drive- Entry");
+						AxisControl(WHEEL_DRIVE_1,ON,WHEEL_DRIVE_2,ON,WHEEL_DRIVE_3,ON);
+						AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+
+					}
+					SIG_IDLE	=
+					{
+						if(ACT_DRIVE_BREAK_CLOSE)
+						{
+							if(! DI_SEMI_AUTO_ON)
+								setVelWheelDrv_RotWheel(gConfRotWheelVelF_1,WHEEL_DRIVE_ROT_WHEEL_DIR_1,gConfRotWheelBoostF);
+							else if(movementState==0)
+							{
+								setRelProfileWheelDrv(	gConfRotWheelVelF_1,
+														WHEEL_DRIVE_ROT_WHEEL_DIR_1,
+														WHEEL_DRIVE_ROT_WHEEL_SEMI_AUTO_VEL,
+														calcCurvePathLength(gConfRotWheelPathL[ROT_WHEELP_1_PATH_LENGTH],180));
+								movementState=1;
+							}
+							else if(checkRelProfilWheelDrv(gSemiAutoTargetPos)&&movementState==1)
+							{
+								AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+								movementState=2;
+							}
+							else if(movementState==2&&WHEEL_DRIVE_NO_MOVE)
+							{
+								AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+								movementState=3;
+							}
+							else if(movementState==3)
+							{
+								setVelWheelDrv_RotWheel(gConfRotWheelVelF_1,WHEEL_DRIVE_ROT_WHEEL_DIR_1,gConfRotWheelBoostF);
+							}
+						}
+
+						return(SmNotHandled);
+					}
+				}
+
+			}
+			SmState RotWheel_2
+			{
+				SIG_INIT	=
+				{
+					SmPublish(SIG_LED_ON, LED_PERIOD_ROT_WHEEL, 0, 1, 0);
+					return(SmTrans(->WaitForActDrivePos));
+				}
+
+				SIG_ENTRY	=
+				{
+					print("SM: RotWheel_2 - Entry");
+					USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_ROTWHEEL_2;
+
+					AxisControl(WHEEL_DRIVE_1,OFF,WHEEL_DRIVE_2,ON,WHEEL_DRIVE_3,OFF);
+					AxisPosAbsStart(ACTUATING_DRIVE_1,gConfRotWheelAng_2[0],ACTUATING_DRIVE_2,gConfRotWheelAng_2[1],ACTUATING_DRIVE_3,gConfRotWheelAng_2[2]);
+				}
+
+				SmState WaitForActDrivePos
+				{
+					SIG_ENTRY	=
+					{
+						print("SM: RotWheel_2_WaitForActDrivePos - Entry");
+
+					}
+					SIG_IDLE	=
+					{
+						if(ACTUTATING_DRIVE_TAR_RECH)
+						{
+							SmPublish(SIG_ACT_BREAK,0,0,0);
+							return(SmTrans(Drive));
+						}
+						else
+							return(SmNotHandled);
+					}
+				}
+				SmState Drive
+				{
+					SIG_ENTRY	=
+					{
+						print("SM: RotWheel_2_Drive- Entry");
+						AxisControl(WHEEL_DRIVE_1,ON,WHEEL_DRIVE_2,ON,WHEEL_DRIVE_3,ON);
+						AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					}
+					SIG_IDLE	=
+					{
+						if(ACT_DRIVE_BREAK_CLOSE)
+						{
+							if(! DI_SEMI_AUTO_ON)
+								setVelWheelDrv_RotWheel(gConfRotWheelVelF_2,WHEEL_DRIVE_ROT_WHEEL_DIR_2,gConfRotWheelBoostF);
+							else if(movementState==0)
+							{
+								setRelProfileWheelDrv(	gConfRotWheelVelF_2,
+														WHEEL_DRIVE_ROT_WHEEL_DIR_2,
+														WHEEL_DRIVE_ROT_WHEEL_SEMI_AUTO_VEL,
+														calcCurvePathLength(gConfRotWheelPathL[ROT_WHEELP_2_PATH_LENGTH],180));
+								movementState=1;
+							}
+							else if(checkRelProfilWheelDrv(gSemiAutoTargetPos)&&movementState==1)
+							{
+								print(Avel(WHEEL_DRIVE_1));
+								print(Avel(WHEEL_DRIVE_2));
+								print(Avel(WHEEL_DRIVE_3));
+								AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+								movementState=2;
+							}
+							else if(movementState==2&&WHEEL_DRIVE_NO_MOVE)
+							{
+								AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+								movementState=3;
+							}
+							else if(movementState==3)
+							{
+								setVelWheelDrv_RotWheel(gConfRotWheelVelF_2,WHEEL_DRIVE_ROT_WHEEL_DIR_2,gConfRotWheelBoostF);
+							}
+						}
+
+						return(SmNotHandled);
+					}
+				}
+			}
+			SmState RotWheel_3
+			{
+				SIG_INIT	=
+				{
+					SmPublish(SIG_LED_ON, LED_PERIOD_ROT_WHEEL, 0, 0, 1);
+					return(SmTrans(->WaitForActDrivePos));
+				}
+				SIG_ENTRY	=
+				{
+					print("SM: RotWheel_3 - Entry");
+					USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_ROTWHEEL_3;
+
+					AxisControl(WHEEL_DRIVE_1,OFF,WHEEL_DRIVE_2,OFF,WHEEL_DRIVE_3,ON);
+					AxisPosAbsStart(ACTUATING_DRIVE_1,gConfRotWheelAng_3[0],ACTUATING_DRIVE_2,gConfRotWheelAng_3[1],ACTUATING_DRIVE_3,gConfRotWheelAng_3[2]);
+				}
+
+				SmState WaitForActDrivePos
+				{
+					SIG_ENTRY	=
+					{
+						print("SM: RotWheel_3_WaitForActDrivePos - Entry");
+
+					}
+					SIG_IDLE	=
+					{
+						if(ACTUTATING_DRIVE_TAR_RECH)
+						{
+							SmPublish(SIG_ACT_BREAK,0,0,0);
+							return(SmTrans(Drive));
+						}
+						else
+							return(SmNotHandled);
+					}
+				}
+				SmState Drive
+				{
+					SIG_ENTRY	=
+					{
+						print("SM: RotWheel_3_Drive- Entry");
+						AxisControl(WHEEL_DRIVE_1,ON,WHEEL_DRIVE_2,ON,WHEEL_DRIVE_3,ON);
+						AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					}
+					SIG_IDLE	=
+					{
+						if(ACT_DRIVE_BREAK_CLOSE)
+						{
+							if(! DI_SEMI_AUTO_ON)
+								setVelWheelDrv_RotWheel(gConfRotWheelVelF_3,WHEEL_DRIVE_ROT_WHEEL_DIR_3,gConfRotWheelBoostF);
+							else if(movementState==0)
+							{
+								setRelProfileWheelDrv(	gConfRotWheelVelF_3,
+														WHEEL_DRIVE_ROT_WHEEL_DIR_3,
+														WHEEL_DRIVE_ROT_WHEEL_SEMI_AUTO_VEL,
+														calcCurvePathLength(gConfRotWheelPathL[ROT_WHEELP_1_PATH_LENGTH],180));
+								movementState=1;
+							}
+							else if(checkRelProfilWheelDrv(gSemiAutoTargetPos)&&movementState==1)
+							{
+								print(Avel(WHEEL_DRIVE_1));
+								print(Avel(WHEEL_DRIVE_2));
+								print(Avel(WHEEL_DRIVE_3));
+								AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+								movementState=2;
+							}
+							else if(movementState==2&&WHEEL_DRIVE_NO_MOVE)
+							{
+								AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+								movementState=3;
+							}
+							else if(movementState==3)
+							{
+								setVelWheelDrv_RotWheel(gConfRotWheelVelF_3,WHEEL_DRIVE_ROT_WHEEL_DIR_3,gConfRotWheelBoostF);
+							}
+						}
+
+						return(SmNotHandled);
+					}
+				}
+			}
+			SmState RotWheel_1_3
+			{
+				SIG_INIT	=
+				{
+					SmPublish(SIG_LED_ON, LED_PERIOD_ROT_WHEEL, 1, 0, 1);
+					return(SmTrans(->WaitForBreakOpen));
+				}
+				SIG_ENTRY	=
+				{
+					print("SM: RotWheel_1_3 - Entry");
+					USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_ROTWHEEL_1_3;
+				}
+				SmState WaitForBreakOpen
+				{
+
+					SIG_ENTRY =
+						{
+							if(! ACT_DRIVE_BREAK_OPEN)
+								SmPublish(SIG_ACT_BREAK,1,1,1);
+						}
+					SIG_IDLE	=
+					{
+						if(ACT_DRIVE_BREAK_OPEN)
+							return(SmTrans(RotWheelPoint_1));
+						else
+							return(SmNotHandled);
+					}
+				}
+				SmState RotWheelPoint_1
+				{
+					SIG_ENTRY =
+					{
+						print("SM: RotCentralPoint_1 - Entry");
+
+						AxisPosAbsStart(ACTUATING_DRIVE_1,gConfRotWheelAng_1_3[0]);
+						AxisControl(WHEEL_DRIVE_1,OFF);
+
+					}
+					SIG_IDLE =
+					{
+
+						if(AxisTargetReached(ACTUATING_DRIVE_1))
+						{
+							if(ALL_DRIVE_NO_MOVE)
+							{
+								print("Wheel 1 Finish");
+								return(SmTrans(RotWheelPoint_2));
+							}
+						}
+						else
+						{
+							return(SmHandled);
+						}
+					}
+
+				}
+				SmState RotWheelPoint_2
+				{
+					SIG_ENTRY =
+					{
+						print("SM: RotCentralPoint_2 - Entry");
+
+						AxisPosAbsStart(ACTUATING_DRIVE_2,gConfRotWheelAng_1_3[1]);
+						AxisControl(WHEEL_DRIVE_2,OFF);
+
+					}
+					SIG_IDLE =
+					{
+						if(AxisTargetReached(ACTUATING_DRIVE_2))
+						{
+							if(ALL_DRIVE_NO_MOVE)
+							{
+								print("Wheel 2 Finish");
+								return(SmTrans(RotWheelPoint_3));
+							}
+						}
+						else
+						{
+							return(SmHandled);
+						}
+					}
+
+				}
+				SmState RotWheelPoint_3
+				{
+					SIG_ENTRY =
+					{
+						print("SM: RotCentralPoint_3 - Entry");
+						AxisPosAbsStart(ACTUATING_DRIVE_3,gConfRotWheelAng_1_3[2]);
+						AxisControl(WHEEL_DRIVE_3,OFF);
+					}
+					SIG_IDLE =
+					{
+						if(AxisTargetReached(ACTUATING_DRIVE_3))
+						{
+							if(ALL_DRIVE_NO_MOVE)
+							{
+								print("Wheel 3 Finish");
+								return(SmTrans(Drive));
+							}
+						}
+						else
+						{
+							return(SmHandled);
+						}
+					}
+				}
+
+				SmState Drive
+				{
+					SIG_ENTRY	=
+					{
+						print("SM: RotWheel_1_3_Drive- Entry");
+						AxisControl(WHEEL_DRIVE_1,ON,WHEEL_DRIVE_2,ON,WHEEL_DRIVE_3,ON);
+						AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+						SmPublish(SIG_ACT_BREAK,0,0,0);
+					}
+					SIG_IDLE	=
+					{
+						if(ACT_DRIVE_BREAK_CLOSE)
+						{
+							if(! DI_SEMI_AUTO_ON)
+								setVelWheelDrv_RotWheel(gConfRotWheelVelF_1_3,WHEEL_DRIVE_ROT_WHEEL_DIR_3,gConfRotWheelBoostF);
+							else if(movementState==0)
+							{
+								setRelProfileWheelDrv(	gConfRotWheelVelF_1_3,
+														WHEEL_DRIVE_ROT_WHEEL_DIR_3,
+														WHEEL_DRIVE_ROT_WHEEL_SEMI_AUTO_VEL,
+														calcCurvePathLength(gConfRotWheelPathL[ROT_WHEELP_1_3_PATH_LENGTH],180));
+								movementState=1;
+							}
+							else if(checkRelProfilWheelDrv(gSemiAutoTargetPos)&&movementState==1)
+							{
+								print(Avel(WHEEL_DRIVE_1));
+								print(Avel(WHEEL_DRIVE_2));
+								print(Avel(WHEEL_DRIVE_3));
+								AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+								movementState=2;
+							}
+							else if(movementState==2&&WHEEL_DRIVE_NO_MOVE)
+							{
+								AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+								movementState=3;
+							}
+							else if(movementState==3)
+							{
+								setVelWheelDrv_RotWheel(gConfRotWheelVelF_1_3,WHEEL_DRIVE_ROT_WHEEL_DIR_3,gConfRotWheelBoostF);
+							}
+						}
+
+						return(SmNotHandled);
+					}
+				}
+			}
+		} // RotWheelPoint
+
+		SIG_STOP				= SmTrans(->Stop);
+		SIG_JOYSTICK_BOOST_UP	=
+		{
+			print("Joystick boost up");
+			USER_PARAM(USER_MONITOR_COMMAND) 	= CMD_IDLE;
+
+			gVelocityMonitor = gVelocityMonitor + USER_BOOST_INC;
+		}
+		SIG_JOYSTICK_BOOST_DOWN	=
+		{
+			print("Joystick boost down");
+			USER_PARAM(USER_MONITOR_COMMAND) 	= CMD_IDLE;
+
+			gVelocityMonitor = gVelocityMonitor - USER_BOOST_INC;
+		}
+		SIG_JOYSTICK_STEERING_LEFT	=
+		{
+			print("Joystick left");
+			USER_PARAM(USER_MONITOR_COMMAND) 	= CMD_IDLE;
+
+			gAngleMonitor = gAngleMonitor + USER_STEERING_INC;
+		}
+		SIG_JOYSTICK_STEERING_RIGHT	=
+		{
+			print("Joystick right");
+			USER_PARAM(USER_MONITOR_COMMAND) 	= CMD_IDLE;
+
+			gAngleMonitor = gAngleMonitor - USER_STEERING_INC;
+		}
+		SIG_SET_CONST_SPEED		=
+		{
+			if(DI_SET_CONST_SPEED)
+			{
+				print("Constant Speed Enable");
+			}
+			else
+			{
+				print("Constant Speed Disable");
+			}
+
+		}
+
+		SIG_ERROR_RADIO			= SmTrans(<-*->MotorsOff);
+	}
+
+	SmState ManualControl
+	{
+		SIG_ENTRY	=
+		{
+			print("SM: ManualControl - Entry");
+			Acc(WHEEL_DRIVE_1,WHEEL_DRIVE_MANUAL_ACC,WHEEL_DRIVE_2,WHEEL_DRIVE_MANUAL_ACC,WHEEL_DRIVE_3,WHEEL_DRIVE_MANUAL_ACC);
+			Dec(WHEEL_DRIVE_1,WHEEL_DRIVE_MANUAL_DEC,WHEEL_DRIVE_2,WHEEL_DRIVE_MANUAL_DEC,WHEEL_DRIVE_3,WHEEL_DRIVE_MANUAL_DEC);
+            // Close Break
+			if(ACT_DRIVE_BREAK_OPEN)
+				SmPublish(SIG_ACT_BREAK,0,0,0);
+
+			//Open Wheek WheelBrake
+			if(!WHEEL_DRIVE_BRAKE_OPEN)
+				SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+		}
+		SIG_EXIT	=
+		{
+			print("SM: ManualControl - Exit");
+		}
+		SIG_IDLE	=
+		{
+			if (DI_HMI_2_TRAV_1 && DI_HMI_1_TRAV_1)
+			{
+				SmPublish(SIG_LED_ON, LED_PERIOD_WAIT, 1,1,1);
+				return(SmTrans(<-*->MotorsOff));
+			}
+			else if (DI_HMI_2_TRAV_1)
+			{
+				if(!DI_HMI_MODE && gConfigTyp==MECH_CONFIG_FOLD)
+				{
+					return(SmTrans(->FoldingSupport));
+				}
+				else if(DI_HMI_MODE && gConfigTyp==MECH_CONFIG_FOLD)
+				{
+					return(SmTrans(->FoldingDriveFwd));
+				}
+				else
+				{
+					return(SmTrans(->ManualForward));
+				}
+
+			}
+			else if (DI_HMI_1_TRAV_1)
+			{
+				if(!DI_HMI_MODE && gConfigTyp==MECH_CONFIG_FOLD)
+				{
+					return(SmTrans(->FoldingSupport));
+				}
+				else if(DI_HMI_MODE && gConfigTyp==MECH_CONFIG_FOLD)
+				{
+					return(SmTrans(->FoldingDriveBkw));
+				}
+				else
+				{
+					return(SmTrans(->ManualBackward));
+				}
+
+			}
+			else
+			{
+				return(SmTrans(<-Running->RemoteControl));
+			}
+		}
+		SmState ManualStop
+		{
+			SIG_INIT	=
+			{
+				print("SM: ManualStop - Init");
+			}
+			SIG_EXIT	=
+			{
+				AxisControl(WHEEL_DRIVE_1, OFF, WHEEL_DRIVE_2, OFF, WHEEL_DRIVE_3, OFF);
+				print("Wheel Drive Disable");
+			}
+
+			SIG_IDLE	=
+			{
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_STOP;
+
+				AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+
+				gVelocityMonitor=0;
+				gVelocityVehicle=0;
+				Delay(500);
+				print("In manual stop");
+
+
+				// if(ALL_DRIVE_NO_MOVE)
+				// 	return(SmTrans(<-ManualControl));
+			}
+		}
+
+		SmState ManualForward
+		{
+			SIG_ENTRY	=
+			{
+				print("SM: ManualForward - Entry");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_M_FORWARD;
+
+				SmPublish(SIG_LED_ON, LED_PERIOD_MANUAL, 1, 1, 0);
+                Delay(500);
+				DO_BREAK_WD_DRIVE_1(1);
+				DO_BREAK_WD_DRIVE_2(1);
+				DO_BREAK_WD_DRIVE_3(1);
+				AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+				print("Wheel Drive Enable");
+
+				Cvel(	WHEEL_DRIVE_1, 0,
+				WHEEL_DRIVE_2, 0,
+				WHEEL_DRIVE_3, 0);
+			}
+			SIG_IDLE	=
+			{
+				if (! DI_HMI_2_TRAV_1 || DI_HMI_1_TRAV_1 )
+				{
+				    print("stopping forward");
+					AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					while(AxisMoving(WHEEL_DRIVE_1));
+					return(SmTrans(ManualStop));
+				}
+
+				if(DI_ROT_CENTRALPOINT)
+				{
+					Cvel(	WHEEL_DRIVE_1, WHEEL_DRIVE_ROT_CENTRE_VEL_MANUAL,
+					WHEEL_DRIVE_2, -WHEEL_DRIVE_ROT_CENTRE_VEL_MANUAL,
+					WHEEL_DRIVE_3, WHEEL_DRIVE_ROT_CENTRE_VEL_MANUAL);
+					AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+
+				} else if(DI_CURVE_DRIVE)
+				{
+					print("manual drive not possible during curve drive");
+
+				}else if(1)
+				{
+				    print("moving forward");
+				    //////////**/////////////////
+					//
+					//First brake point
+					//
+					//////////**/////////////////
+
+					//code here
+
+					/*Delay(500);
+					DO_BREAK_WD_DRIVE_1(0);
+					DO_BREAK_WD_DRIVE_2(0);
+					DO_BREAK_WD_DRIVE_3(0);
+					Delay(500);
+					DO_BREAK_WD_DRIVE_1(1);
+					Delay(500);
+					DO_BREAK_WD_DRIVE_2(1);
+					Delay(500);
+					DO_BREAK_WD_DRIVE_3(1);
+					Delay(1000);*/
+
+					//////////**/////////////////
+					//
+					//First brake point
+					//
+					//////////**/////////////////
+					Cvel(	WHEEL_DRIVE_1, WHEEL_DRIVE_MANUAL_VEL,
+					WHEEL_DRIVE_2, WHEEL_DRIVE_MANUAL_VEL,
+					WHEEL_DRIVE_3, WHEEL_DRIVE_MANUAL_VEL);
+					AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					//Delay(2000); // additional stuff
+				}
+				 if(1)
+				 {
+				 	AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+				 	Cvel(	WHEEL_DRIVE_1, WHEEL_DRIVE_MANUAL_VEL,
+				 	WHEEL_DRIVE_2, WHEEL_DRIVE_MANUAL_VEL,
+				 	WHEEL_DRIVE_3, WHEEL_DRIVE_MANUAL_VEL);
+				 }
+			}
+		}
+		SmState ManualBackward
+		{
+			SIG_ENTRY	=
+			{
+				print("SM: ManualBackward - Entry");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_M_BACKWARD;
+
+				SmPublish(SIG_LED_ON, LED_PERIOD_MANUAL, 0, 1, 1);
+                Delay(500);
+				DO_BREAK_WD_DRIVE_1(1);
+				DO_BREAK_WD_DRIVE_2(1);
+				DO_BREAK_WD_DRIVE_3(1);
+				AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+				print("Wheel Drive Enable");
+				Cvel(WHEEL_DRIVE_1, 0,
+				WHEEL_DRIVE_2, 0,
+				WHEEL_DRIVE_3, 0);
+			}
+
+			SIG_IDLE	=
+			{
+				if (! DI_HMI_1_TRAV_1 || DI_HMI_2_TRAV_1)
+				{
+				    print("stopping backward");
+					AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					while(AxisMoving(WHEEL_DRIVE_1));
+					return(SmTrans(ManualStop));
+				}
+				if(DI_ROT_CENTRALPOINT)
+				{
+					Cvel(	WHEEL_DRIVE_1, -WHEEL_DRIVE_ROT_CENTRE_VEL_MANUAL,
+					WHEEL_DRIVE_2, WHEEL_DRIVE_ROT_CENTRE_VEL_MANUAL,
+					WHEEL_DRIVE_3, -WHEEL_DRIVE_ROT_CENTRE_VEL_MANUAL);
+					AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+
+				} else if(DI_CURVE_DRIVE)
+				{
+					print("manual drive not possible during curve drive");
+
+				}else if(1)
+				{
+				    print("moving backward");
+				    //////////**/////////////////
+					//
+					//First brake point
+					//
+					//////////**/////////////////
+
+					//code here
+					/*Delay(500);
+					DO_BREAK_WD_DRIVE_1(0);
+					DO_BREAK_WD_DRIVE_2(0);
+					DO_BREAK_WD_DRIVE_3(0);
+					Delay(500);
+					DO_BREAK_WD_DRIVE_1(1);
+					Delay(500);
+					DO_BREAK_WD_DRIVE_2(1);
+					Delay(500);
+					DO_BREAK_WD_DRIVE_3(1);
+					Delay(1000);*/
+					//////////**/////////////////
+					//
+					//First brake point
+					//
+					//////////**/////////////////
+					Cvel(	WHEEL_DRIVE_1, -WHEEL_DRIVE_MANUAL_VEL,
+					WHEEL_DRIVE_2, -WHEEL_DRIVE_MANUAL_VEL,
+					WHEEL_DRIVE_3, -WHEEL_DRIVE_MANUAL_VEL);
+					AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					//Delay(2000); // additional stuff
+				}
+				 if(1)
+				 {
+				 	AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+				 	Cvel(	WHEEL_DRIVE_1, -WHEEL_DRIVE_MANUAL_VEL,
+				 	WHEEL_DRIVE_2, -WHEEL_DRIVE_MANUAL_VEL,
+				 	WHEEL_DRIVE_3, -WHEEL_DRIVE_MANUAL_VEL);
+				 }
+			}
+		}
+
+		SmState FoldingDrive
+		{
+			SIG_ENTRY	=
+			{
+				print("SM: FoldingDrive - Entry");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_M_FOLDDRIVE;
+				AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+
+				if(ACT_DRIVE_BREAK_OPEN)
+					SmPublish(SIG_ACT_BREAK,0,0,0);
+
+				if(WHEEL_DRIVE_BRAKE_CLOSE)
+				SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+
+				SmPublish(SIG_LED_ON, LED_PERIOD_MANUAL, 0, 1, 0);
+
+				Cvel(	WHEEL_DRIVE_1, 0,
+				WHEEL_DRIVE_2, 0,
+				WHEEL_DRIVE_3, 0);
+
+			}
+			SIG_EXIT	=
+			{
+				print("SM: FoldingDrive - EXIT");
+				AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+			}
+			SIG_IDLE	=
+			{
+
+				if (!DI_HMI_1_TRAV_1 && !DI_HMI_2_TRAV_1)
+				{
+				    AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					return(SmTrans(ManualStop));
+				}
+				if(ACT_DRIVE_BREAK_CLOSE && WHEEL_DRIVE_BRAKE_OPEN)
+				{
+					if(DI_HMI_MODE && DI_HMI_2_TRAV_1)
+					{
+					    AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+						Cvel(	WHEEL_DRIVE_1, -WHEEL_DRIVE_FOLD_VEL,
+						WHEEL_DRIVE_2, WHEEL_DRIVE_FOLD_VEL,
+						WHEEL_DRIVE_3, -WHEEL_DRIVE_FOLD_VEL);
+					}
+					else if(DI_HMI_MODE && DI_HMI_1_TRAV_1)
+					{
+					    AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+						Cvel(	WHEEL_DRIVE_1, WHEEL_DRIVE_FOLD_VEL,
+						WHEEL_DRIVE_2, -WHEEL_DRIVE_FOLD_VEL,
+						WHEEL_DRIVE_3, WHEEL_DRIVE_FOLD_VEL);
+					}
+				}
+			}
+		}
+
+		SmState FoldingDriveFwd
+		{
+			SIG_ENTRY	=
+			{
+				print("SM: FoldingDrive - Entry forward");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_M_FOLDDRIVE;
+				AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+
+                if(ACT_DRIVE_BREAK_OPEN)
+				{
+					SmPublish(SIG_ACT_BREAK,0,0,0);
+				}
+
+				if(WHEEL_DRIVE_BRAKE_CLOSE)
+				{
+
+				    SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+				}
+
+				//SmPublish(SIG_LED_ON, LED_PERIOD_MANUAL, 0, 1, 0);
+
+				Cvel(	WHEEL_DRIVE_1, 0,
+				WHEEL_DRIVE_2, 0,
+				WHEEL_DRIVE_3, 0);
+
+			}
+			SIG_EXIT	=
+			{
+				print("SM: FoldingDrive - EXIT forward");
+				//AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+			}
+			SIG_IDLE	=
+			{
+                if (! DI_HMI_2_TRAV_1 || DI_HMI_1_TRAV_1 )
+				{
+                    AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					//while(AxisMoving(WHEEL_DRIVE_1));
+					return(SmTrans(ManualStop));
+				}
+				if(ACT_DRIVE_BREAK_CLOSE && WHEEL_DRIVE_BRAKE_OPEN)
+				{
+					if(DI_HMI_MODE && DI_HMI_2_TRAV_1)
+					{
+                        Cvel(	WHEEL_DRIVE_1, -WHEEL_DRIVE_FOLD_VEL,
+						WHEEL_DRIVE_2, WHEEL_DRIVE_FOLD_VEL,
+						WHEEL_DRIVE_3, -WHEEL_DRIVE_FOLD_VEL);
+						AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					}
+				}
+			}
+		}
+
+		SmState FoldingDriveBkw
+		{
+			SIG_ENTRY	=
+			{
+				print("SM: FoldingDrive - Entry backward");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_M_FOLDDRIVE;
+				AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+
+                if(ACT_DRIVE_BREAK_OPEN)
+				{
+					SmPublish(SIG_ACT_BREAK,0,0,0);
+				}
+
+				if(WHEEL_DRIVE_BRAKE_CLOSE)
+				{
+
+				    SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+				}
+				//SmPublish(SIG_LED_ON, LED_PERIOD_MANUAL, 0, 1, 0);
+
+				Cvel(	WHEEL_DRIVE_1, 0,
+				WHEEL_DRIVE_2, 0,
+				WHEEL_DRIVE_3, 0);
+
+			}
+			SIG_EXIT	=
+			{
+				print("SM: FoldingDrive - EXIT backward");
+				//AxisControl(WHEEL_DRIVE_1, ON, WHEEL_DRIVE_2, ON, WHEEL_DRIVE_3, ON);
+			}
+			SIG_IDLE	=
+			{
+                if (! DI_HMI_1_TRAV_1 || DI_HMI_2_TRAV_1)
+				{
+				    AxisCvelStop(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					//while(AxisMoving(WHEEL_DRIVE_1));
+					return(SmTrans(ManualStop));
+				}
+				if(ACT_DRIVE_BREAK_CLOSE && WHEEL_DRIVE_BRAKE_OPEN)
+				{
+					if(DI_HMI_MODE && DI_HMI_1_TRAV_1)
+					{
+                        Cvel(	WHEEL_DRIVE_1, WHEEL_DRIVE_FOLD_VEL,
+						WHEEL_DRIVE_2, -WHEEL_DRIVE_FOLD_VEL,
+						WHEEL_DRIVE_3, WHEEL_DRIVE_FOLD_VEL);
+						AxisCvelStart(WHEEL_DRIVE_1,WHEEL_DRIVE_2,WHEEL_DRIVE_3);
+					}
+				}
+			}
+		}
+
+
+		SmState FoldingSupport
+		{
+			SIG_ENTRY	=
+			{
+				print("SM: FoldingSupport - Entry");
+				USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_M_FOLDDRIVE;
+				gFoldingActive=1;
+
+				AxisControl(AXALL, OFF);
+
+				SmPublish(SIG_LED_FLOW_LEFT, LED_PERIOD_FOLD);
+			}
+			SIG_EXIT	=
+			{
+				print("SM: FoldingSupport - EXIT");
+			}
+			SIG_IDLE	=
+			{
+				if(!DI_HMI_MODE && DI_HMI_2_TRAV_1)
+				{
+					SmPublish(SIG_ACT_BREAK,1,1,1);
+					SmPublish(SIG_WHEEL_BRAKE,1,0,1);
+				}
+				else if(!DI_HMI_MODE && DI_HMI_1_TRAV_1)
+				{
+					SmPublish(SIG_ACT_BREAK,0,0,0);
+					SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+				}
+			}
+		}
+	}
+
+} // Running
+
+
+/*********************************************************************
+** State Machine Functions
+*********************************************************************/
+/*
+** Remeber last direction
+*/
+void saveLastDirection(void)
+{
+	if(gVelocityVehicle > AI_JOYSTICK_BOOST_UU_SWING)
+		gLastDirection=1;
+	else if(gVelocityVehicle < -AI_JOYSTICK_BOOST_UU_SWING)
+		gLastDirection=-1;
+}
+
+/*
+** Set wheeld drive velocity for the "Rot Wheel Point" mode
+*/
+void setVelWheelDrv_RotWheel(long wheelVelF[], long invert, long boostF)
+{
+	long setVel[3], k;
+
+	for(k=0;k<3;k++)
+	{
+		setVel[k]=	(long)((double)wheelVelF[k]/100 * (double)gVelocityVehicle * (double)boostF/100)*invert;
+	}
+	Cvel(	WHEEL_DRIVE_1, setVel[0],
+			WHEEL_DRIVE_2, -1*setVel[1],
+			WHEEL_DRIVE_3, setVel[2]);
+	Acc(	WHEEL_DRIVE_1,WHEEL_DRIVE_ROT_WHEEL_ACC*wheelVelF[0]/100*boostF/100 ,
+			WHEEL_DRIVE_2,WHEEL_DRIVE_ROT_WHEEL_ACC*wheelVelF[1]/100 *boostF/100,
+			WHEEL_DRIVE_3,WHEEL_DRIVE_ROT_WHEEL_ACC*wheelVelF[2]/100*boostF/100 );
+	Dec(	WHEEL_DRIVE_1,WHEEL_DRIVE_ROT_WHEEL_DEC*wheelVelF[0]/100*boostF/100 ,
+			WHEEL_DRIVE_2,WHEEL_DRIVE_ROT_WHEEL_DEC*wheelVelF[1]/100*boostF/100 ,
+			WHEEL_DRIVE_3,WHEEL_DRIVE_ROT_WHEEL_DEC*wheelVelF[2]/100*boostF/100 );
+}
+
+/*
+** Set wheeld drive velocity profile for reache a relative position
+*/
+void setRelProfileWheelDrv(long wheelVelF[], long direction, long velMaster, long distMaster)
+{
+	long k;
+
+	if(DI_INVERT_MODE)
+		direction=direction*-1;
+
+	for(k=0;k<3;k++)
+	{
+		gSemiAutoVel[k]=	(long)((double)wheelVelF[k]/100 * (double)velMaster)*direction;
+	}
+
+//	if(direction==1)
+//	{
+//		gSemiAutoTargetPos[0]=	Apos(WHEEL_DRIVE_1)+(long)((double)wheelVelF[0]/100 * (double)distMaster);
+//		gSemiAutoTargetPos[1]=	Apos(WHEEL_DRIVE_2)-(long)((double)wheelVelF[1]/100 * (double)distMaster);
+//		gSemiAutoTargetPos[2]=	Apos(WHEEL_DRIVE_3)+(long)((double)wheelVelF[2]/100 * (double)distMaster);
+//	}
+//	else
+//	{
+//		gSemiAutoTargetPos[0]=	Apos(WHEEL_DRIVE_1)-(long)((double)wheelVelF[0]/100 * (double)distMaster);
+//		gSemiAutoTargetPos[1]=	Apos(WHEEL_DRIVE_2)+(long)((double)wheelVelF[1]/100 * (double)distMaster);
+//		gSemiAutoTargetPos[2]=	Apos(WHEEL_DRIVE_3)-(long)((double)wheelVelF[2]/100 * (double)distMaster);
+//	}
+
+	gSemiAutoVel[1]=gSemiAutoVel[1]*-1;
+	if(gSemiAutoVel[0]>0)
+		gSemiAutoTargetPos[0]=	Apos(WHEEL_DRIVE_1)+(long)((double)wheelVelF[0]/100 * (double)distMaster);
+	else
+		gSemiAutoTargetPos[0]=	Apos(WHEEL_DRIVE_1)-(long)((double)wheelVelF[0]/100 * (double)distMaster);
+	if(gSemiAutoVel[1]>0)
+		gSemiAutoTargetPos[1]=	Apos(WHEEL_DRIVE_2)+(long)((double)wheelVelF[1]/100 * (double)distMaster);
+	else
+		gSemiAutoTargetPos[1]=	Apos(WHEEL_DRIVE_2)-(long)((double)wheelVelF[1]/100 * (double)distMaster);
+	if(gSemiAutoVel[2]>0)
+		gSemiAutoTargetPos[2]=	Apos(WHEEL_DRIVE_3)+(long)((double)wheelVelF[2]/100 * (double)distMaster);
+	else
+		gSemiAutoTargetPos[2]=	Apos(WHEEL_DRIVE_3)-(long)((double)wheelVelF[2]/100 * (double)distMaster);
+
+	Cvel(	WHEEL_DRIVE_1, gSemiAutoVel[0],
+			WHEEL_DRIVE_2, gSemiAutoVel[1],
+			WHEEL_DRIVE_3, gSemiAutoVel[2]);
+
+	Acc(	WHEEL_DRIVE_1,WHEEL_DRIVE_ROT_WHEEL_ACC*wheelVelF[0]/100 ,
+			WHEEL_DRIVE_2,WHEEL_DRIVE_ROT_WHEEL_ACC*wheelVelF[1]/100 ,
+			WHEEL_DRIVE_3,WHEEL_DRIVE_ROT_WHEEL_ACC*wheelVelF[2]/100 );
+	Dec(	WHEEL_DRIVE_1,WHEEL_DRIVE_ROT_WHEEL_DEC*wheelVelF[0]/100 ,
+			WHEEL_DRIVE_2,WHEEL_DRIVE_ROT_WHEEL_DEC*wheelVelF[1]/100 ,
+			WHEEL_DRIVE_3,WHEEL_DRIVE_ROT_WHEEL_DEC*wheelVelF[2]/100 );
+
+	print("SetRelProfile - EndPos");
+	print("WD1: ",gSemiAutoTargetPos[0], " WD2: ",gSemiAutoTargetPos[1], " WD3: ",gSemiAutoTargetPos[2]);
+	print("WD1: ",gSemiAutoVel[0], " WD2: ",gSemiAutoVel[1], " WD3: ",gSemiAutoVel[2]);
+
+}
+
+/*
+** Calculate a part of a rotational movement using the diameter and the segment of a circle
+*/
+
+long checkRelProfilWheelDrv(long targetPosition[3])
+{
+	long checkPosition=0;
+
+	if(AxisMoving(WHEEL_DRIVE_1)||AxisMoving(WHEEL_DRIVE_2)||AxisMoving(WHEEL_DRIVE_3))
+	{
+		if(Avel(WHEEL_DRIVE_1)>0)
+		{
+			if(Apos(WHEEL_DRIVE_1)>=targetPosition[0])
+				checkPosition.i[0]=1;
+		}
+		else if(Avel(WHEEL_DRIVE_1)<0)
+		{
+			if(Apos(WHEEL_DRIVE_1)<=targetPosition[0])
+				checkPosition.i[0]=1;
+		}
+		if(Avel(WHEEL_DRIVE_2)>0)
+		{
+			if(Apos(WHEEL_DRIVE_2)>=targetPosition[1])
+				checkPosition.i[1]=1;
+		}
+		else if(Avel(WHEEL_DRIVE_2)<0)
+		{
+			if(Apos(WHEEL_DRIVE_2)<=targetPosition[1])
+				checkPosition.i[1]=1;
+		}
+		if(Avel(WHEEL_DRIVE_3)>0)
+		{
+			if(Apos(WHEEL_DRIVE_3)>=targetPosition[2])
+				checkPosition.i[2]=1;
+		}
+		else if(Avel(WHEEL_DRIVE_3)<0)
+		{
+			if(Apos(WHEEL_DRIVE_3)<=targetPosition[2])
+				checkPosition.i[2]=1;
+		}
+		if(gSemiAutoVel[0]==0)
+			checkPosition.i[0]=1;
+		if(gSemiAutoVel[1]==0)
+			checkPosition.i[1]=1;
+		if(gSemiAutoVel[2]==0)
+			checkPosition.i[2]=1;
+	}
+	else
+	{
+		checkPosition=0;
+	}
+
+	if(checkPosition==7)
+	{
+		gSemiAutoTargetPos[0]=0;
+		gSemiAutoTargetPos[1]=0;
+		gSemiAutoTargetPos[2]=0;
+		return(1);
+	}
+	else
+		return(0);
+
+}
+
+/*
+** Calculate a part of a rotational movement using the diameter and the segment of a circle
+*/
+
+long calcCurvePathLength(long diameter, long degree)
+{
+	print("diameter: ", diameter);
+	print("degree: ", degree);
+	return((diameter)*PI*degree/360);
+}
+
+/*
+** Set wheeld drive velocity for the "Rot Center Point" mode
+*/
+void setVelWheelDrv_RotCentr(long boostF)
+{
+	long setVel;
+
+	setVel =	(long)((double)gVelocityVehicle*(double)boostF/100);
+
+	Cvel(	WHEEL_DRIVE_1, setVel,
+			WHEEL_DRIVE_2, -1*setVel,
+			WHEEL_DRIVE_3, setVel);
+}
+
+/*
+** Set the a constant velocity if the DI_SET_CONST_SPEED is high and
+** the joystick velocity at least 1
+*/
+
+void setConstantVelocity(void)
+{
+	if(! DI_SEMI_AUTO_ON)
+	{
+		// Set constnt velocity if velocity !=0
+		if(DI_SET_CONST_SPEED && gVelocityVehicle < 0)
+			gVelocityVehicle = -1*calcUuVelocityToPercent(USER_PARAM(USER_SETVELCONST));
+		else if (DI_SET_CONST_SPEED && gVelocityVehicle > 0)
+			gVelocityVehicle = 1*calcUuVelocityToPercent(USER_PARAM(USER_SETVELCONST));
+	}
+	else
+	{
+		if(gSemiAutoConstantVel)
+			gVelocityVehicle = 1*calcUuVelocityToPercent(USER_PARAM(USER_SETVELCONST));
+	}
+}
+void setSlowVelocity(void)
+{
+	if(gMotorSlowModeOn)
+	{
+		gVelocityVehicle = (double)gVelocityVehicle/WHEEL_DRIVE_SLOW_MODE_FAKT;
+	}
+}
+
+
+void invertVehicleMotion(void)
+{
+	if(DI_INVERT_MODE)
+	{
+		gVelocityVehicle = gVelocityVehicle*-1;
+		gAngleVehicle = gAngleVehicle*-1;
+	}
+	else
+	{
+		gVelocityVehicle = gVelocityVehicle;
+		gAngleVehicle = gAngleVehicle;
+	}
+
+}
+
+
+/*
+** Set wheeld drive velocity for the "TANK" mode
+*/
+void setVelWheelDrv_TankSteering()
+{
+	double setVelTank[2];
+	double maxValue1,maxValue2, maxValue;
+	maxValue1	=	max(TANK_STEERING_MAX_WD_2,TANK_STEERING_MIN_WD_2);
+	maxValue2	=	max(TANK_STEERING_MAX_WD_1_3,TANK_STEERING_MIN_WD_1_3);
+
+	maxValue = max(maxValue1,maxValue2);
+
+	// Forward right curve
+	if((gAngleVehicle<0)&&(gVelocityVehicle>0))
+	{
+		setVelTank[0]=(1-maxValue)+(((double)gAngleVehicle*TANK_STEERING_MIN_WD_1_3)/(AI_JOYSTICK_STEERING_UU/AI_JOYSTICK_MASTER_SLAVE_FAKT));
+		setVelTank[1]=(1-maxValue)-(((double)gAngleVehicle*TANK_STEERING_MAX_WD_2)/(AI_JOYSTICK_STEERING_UU/AI_JOYSTICK_MASTER_SLAVE_FAKT));
+	}
+	// Forward left curve
+	else if((gAngleVehicle>0)&&(gVelocityVehicle>0))
+	{
+		setVelTank[0]=(1-maxValue)+(((double)gAngleVehicle*TANK_STEERING_MAX_WD_1_3)/(AI_JOYSTICK_STEERING_UU/AI_JOYSTICK_MASTER_SLAVE_FAKT));
+		setVelTank[1]=(1-maxValue)-(((double)gAngleVehicle*TANK_STEERING_MIN_WD_2)/(AI_JOYSTICK_STEERING_UU/AI_JOYSTICK_MASTER_SLAVE_FAKT));
+	}
+	// Backward right curve
+	else if((gAngleVehicle<0)&&gVelocityVehicle<0)
+	{
+		setVelTank[0]=(1-maxValue)+(((double)gAngleVehicle*TANK_STEERING_MIN_WD_1_3)/(AI_JOYSTICK_STEERING_UU/AI_JOYSTICK_MASTER_SLAVE_FAKT));
+		setVelTank[1]=(1-maxValue)-(((double)gAngleVehicle*TANK_STEERING_MAX_WD_2)/(AI_JOYSTICK_STEERING_UU/AI_JOYSTICK_MASTER_SLAVE_FAKT));
+	}
+	// Backward left curve
+	else if((gAngleVehicle>0)&&gVelocityVehicle<0)
+	{
+		setVelTank[0]=(1-maxValue)+(((double)gAngleVehicle*TANK_STEERING_MAX_WD_1_3)/(AI_JOYSTICK_STEERING_UU/AI_JOYSTICK_MASTER_SLAVE_FAKT));
+		setVelTank[1]=(1-maxValue)-(((double)gAngleVehicle*TANK_STEERING_MIN_WD_2)/(AI_JOYSTICK_STEERING_UU/AI_JOYSTICK_MASTER_SLAVE_FAKT));
+	}
+	else
+	{
+		setVelTank[0]=1;
+		setVelTank[1]=1;
+	}
+	USER_PARAM(USR_MONITOR_TANK_1_3) 	=	setVelTank[0]*100;
+	USER_PARAM(USR_MONITOR_TANK_2) 		=	setVelTank[1]*100;
+
+	if(DI_SET_CONST_SPEED||gSemiAutoConstantVel)
+	{
+			Cvel(	WHEEL_DRIVE_1, setVelTank[0]*gVelocityVehicle,
+			WHEEL_DRIVE_2, setVelTank[1]*gVelocityVehicle,
+			WHEEL_DRIVE_3, setVelTank[0]*gVelocityVehicle);
+	}
+	else
+	{
+		Cvel(	WHEEL_DRIVE_1, WHEEL_DRIVE_TANK_DRIVE_FAKT*setVelTank[0]*gVelocityVehicle,
+				WHEEL_DRIVE_2, WHEEL_DRIVE_TANK_DRIVE_FAKT*setVelTank[1]*gVelocityVehicle,
+				WHEEL_DRIVE_3, WHEEL_DRIVE_TANK_DRIVE_FAKT*setVelTank[0]*gVelocityVehicle);
+	}
+
+
+}
+

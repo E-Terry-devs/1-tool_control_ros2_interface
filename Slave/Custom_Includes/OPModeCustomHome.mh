@@ -1,0 +1,209 @@
+/*
+** Custom Home Functions
+**
+** Customized homing modes can be mapped in this file. The home mode must be smaller than -100.
+**
+*/
+long CustomHomeStart(long id, long signal, long event[], long data[])
+{
+    long homevel, homeacc, homeoffset;
+
+    // Suppression of the warning because signal is not used in this context.
+    signal = signal;
+
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12]   = 0;
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT13]   = 0;
+    data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = 0;  // target
+
+    homevel    = AXE_PARAM(id, HOME_VEL);
+    homeacc    = AXE_PARAM(id, HOME_RAMP);
+    homeoffset = ZBCO_HOMEOFFSET(id);
+    data[DATA_HomeMode]      = ZBCO_HOMEMODE(id);
+    data[DATA_HomeStartTime] = Time();
+    data[DATA_HomeReversed]  = FALSE;
+
+    print("Axis ",id,": Enter state Custom Homing ",data[DATA_HomeMode]," home vel ",homevel);
+
+	switch (data[DATA_HomeMode]) {
+		case -101: 	// Ferag Home Mode
+					Cvel(id, homevel);
+					Acc(id, homeacc);
+					Dec(id, homeacc);
+					data[DATA_HomeIpos] = Ipos(id);
+					AxisCvelStart(id);
+					return(SmTrans(->HomeSearchIndex));
+		case -102: 	// Heidenhain search middle index
+					Cvel(id, homevel);
+					Acc(id, homeacc);
+					Dec(id, homeacc);
+					data[DATA_HomeIpos] = Mipos(id);
+					AxisCvelStart(id);
+					return(SmTrans(->HomeSearchIndex));
+		case -103: 	// Drive until mechanical limit (positive direction)
+					Cvel(id, homevel);
+					Acc(id, homeacc);
+					Dec(id, homeacc);
+					AxisCvelStart(id);
+					data[DATA_WaitForPosErr] = TRUE;
+					return(SmTrans(->HomeSearchSwitch));
+		case -104: 	// Drive until mechanical limit (negative direction)
+					Cvel(id, -homevel);
+					Acc(id, homeacc);
+					Dec(id, homeacc);
+					AxisCvelStart(id);
+					data[DATA_WaitForPosErr] = TRUE;
+					return(SmTrans(->HomeSearchSwitch));
+		case -133: 	// home is where offset is
+					SetOrigin(id, homeoffset);
+					return(SmTrans(<-*->HomeDone));
+		case -134: 	// master home is where offset is
+					print( "mapos ",Mapos(id), " offset ",homeoffset);
+					SetMasterOrigin(id, homeoffset);
+					return(SmTrans(<-*->HomeDone));
+		case -135: 	// master home is where we are
+					DefMasterOrigin(id);
+					SetMasterOrigin(id, -homeoffset);
+					return(SmTrans(<-*->HomeDone));
+		default:
+					print( "unknown home mode ",data[DATA_HomeMode]);
+					return(SmTrans(<-*->HomeError));
+	}  //endswitch
+
+}
+long HomeSearchSwitch_Idle(long id, long signal, long event[], long data[])
+{
+    /*
+    ** We are currently waiting for home to be reached.  Check
+    ** if we need to transition to a different state.
+    */
+
+    // Suppression of the warning because signal is not used in this context.
+    signal = signal;
+
+	switch (data[DATA_HomeMode]) {
+
+		case -103:
+		case -104:     // Mechanical limit (negative and positive direction).
+					if  ((abs(SYS_REG_TRACKERR(id))) > (AXE_PARAM(id, POSERR) * 2 / 3) ) { // trackerror bigger than 2/3 of position error
+						AxisControl(id, ON);
+						DefOrigin(id);
+						SetOrigin(id, - ZBCO_HOMEOFFSET(id) );
+						return(SmTrans(<-*->HomeDone));
+					}
+
+	}  //endswitch
+
+
+    /*
+    ** Let the superstate have a chance to deal with the Idle event.
+    */
+    return(SmNotHandled);
+}
+long HomeSearchIndex_Idle(long id, long signal, long event[], long data[])
+{
+    long tmp, stoppos, homevel;
+
+	// Suppression of the warning because signal is not used in this context.
+    signal = signal;
+
+
+    /*
+    ** We are currently waiting for home to be reached.  Check
+    ** if we need to transition to a different state.
+    */
+
+        switch (data[DATA_HomeMode]) {
+            case -101: // Ferag Home Mode
+                    if (SYS_PFG_VFIN(id) == SYS_PFG_VCMD(id)) {
+                        if (data[DATA_HomeIpos] != Ipos(id)) {
+                            tmp     = ((AXE_PARAM(id, SYNCMPULSS)) * 102 % 100); // Toleranz, damit der Marker wirklich getroffen wird
+                            stoppos = Ipos(id) + tmp;
+                            tmp     = AXE_PARAM(id, HOME_RAMP);
+                            homevel = AXE_PARAM(id, HOME_VEL);
+                            print( "Axis ",id,": Posi. acc/dec ",tmp," zpos ",stoppos," apos ",Apos(id) );
+                            Acc(id, tmp);
+                            Dec(id, tmp);
+                            Vel(id, homevel);
+                            AxisPosAbsStart(id, stoppos);
+                            return(SmTrans(<-*->HomePosIndex));
+                         }
+                    } else {
+                        data[DATA_HomeIpos] = Ipos(id);
+                    }
+                    break;
+            case -102: // Heidenhain middle index search on master
+                    if ( data[DATA_HomeIpos] != Mipos(id) ) { // we found it
+                        print( "Axis ",id,": index found ",Mipos(id));
+                        SYS_PFG_MASTERTARGET(id) = Mipos(id);  // set master target positioin
+                        data[DATA_SlaveTargetPos] = SYS_PFG_MASTERTARGET(id); // read real slave position
+
+                        AxisPosAbsStart(id, data[DATA_SlaveTargetPos]);
+                        print( "positioning started to ", data[DATA_SlaveTargetPos]);
+                        return(SmTrans(HomePosIndex));
+                    } else {
+                        if (Time() - data[DATA_HomeStartTime] > 500) { // we have to wait until it really started
+                            if ( (abs(Mavel(id))) < ( (abs(Avel(id))) * (AXE_PARAM(id, SYNCFACTM)) % (AXE_PARAM(id, SYNCFACTS)) % 10) ) { // we reached limit without finding
+                                if (data[DATA_HomeReversed]) {
+                                    print( "we didn't find any index");
+                                    data[DATA_HomeDone] = HOME_ERROR;
+                                    return(SmTrans(<-*->HomeDone));
+                                } else {
+                                    print( "we change direction ",Time() );
+                                    print( "mavel ",Mavel(id)," avel ",(abs(Avel(id) * (AXE_PARAM(id, SYNCFACTM)) % (AXE_PARAM(id, SYNCFACTS)) % 10)) );
+                                    homevel = -(AXE_PARAM(id, HOME_VEL));
+                                    Cvel(id, homevel);
+                                    AxisCvelStart(id);
+                                    data[DATA_HomeStartTime] = Time();
+                                    data[DATA_HomeReversed]  = TRUE;
+                                 }
+                             }
+                         }
+                     }
+            } //endswitch
+
+
+    /*
+    ** Let the superstate have a chance to deal with the Idle event.
+    */
+
+    return(SmNotHandled);
+}
+long HomePosIndex_Idle(long id, long signal, long event[], long data[])
+{
+    long homeoffset;
+
+    // Suppression of the warning because signal is not used in this context.
+    signal = signal;
+
+    /*
+    ** We are currently waiting for homing to finish.  If the
+    ** axis has stopped moving, then homing is finished and we
+    ** can transition to the Done state.  Otherwise, we can
+    ** "break" in order to let the superstate also have a
+    ** chance to handle the Idle event.
+    */
+
+    if ((AxisStatus(id) & 0x01000000) == 0) {     // Axis is not moving.
+        homeoffset = ZBCO_HOMEOFFSET(id);
+            switch (data[DATA_HomeMode]) {
+                case -102: // heidenhain
+                        print( "index reached ",Mapos(id) );
+                        DefMasterOrigin(id);
+                        SetMasterOrigin(id, -homeoffset);
+                        // fall through to default
+                default:
+                        print( "index reached def ");
+                        DefOrigin(id);
+                        SetOrigin(id, -homeoffset);       // ?
+                        break;
+                } //endswitch
+        data[DATA_HomeDone] = HOME_DONE;
+        return(SmTrans(<-*->HomeDone));
+    }
+
+    /*
+    ** Let the superstate have a chance to deal with the Idle event.
+    */
+
+    return(SmNotHandled);
+}

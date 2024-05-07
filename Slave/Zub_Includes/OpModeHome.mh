@@ -1,0 +1,297 @@
+/*********************************************************************
+**
+**                 CanOpen Operational Mode: Home
+**                 ------------------------------
+**
+**  Definition of status bits is as follows (see DS402 p.63)
+**
+**  Bit 13 = Homing error,
+**  Bit 12 = Homing attained
+**  Bit 10 = Target reached
+**
+**  Bit13 Bit12 Bit10  description
+**  -------------------------------------------------------------------
+**    0     0     0    Homing procedure is in progress
+**    0     0     1    Homing procedure is interrupted or not started
+**    0     1     0    Homing is attainded, but target is not reached
+**    0     1     1    Homing procedure is completed succesfully
+**    1     0     0    Homing error occured, velocity is not zero
+**    1     0     1    Homing error occured, velocity is zero
+**    1     1     x    reserved
+**
+**
+**  Definition of control word bits is as follows (see DS402 p. 62)
+**
+**  Bit 4 = Homing operation start
+**  Bit 8 = Halt
+**
+**  Bit 4 = 0 =>  Do not start homing procedure
+**  Bit 4 = 1 =>  Start or continue homing procedure
+**  Bit 8 = 0 =>  Enable bit 4
+**  Bit 8 = 1 =>  Stop axis according to halt option code 0x605D
+**
+**
+**  Unfortunately the description of the bits is not quite clear (see above). In our interpretation
+**  it is handled like that:
+**  If Halt is set (Bit 8) we change into Halted state and if this bit is then reset you have to restart
+**  Homing procedure from the beginning.
+**  Bit 4 allows you to interrupt a running home sequence (stop the axes) and continue it without leaving it.
+**
+**
+**
+*/
+
+long CustomHomeStart(long id, long signal, long event[], long data[]);
+long HomeSearchSwitch_Idle(long id, long signal, long event[], long data[]);
+long HomeSearchIndex_Idle(long id, long signal, long event[], long data[]);
+long HomePosIndex_Idle(long id, long signal, long event[], long data[]);
+
+#include "..\Custom_Includes\OPModeCustomHome.mh"
+
+
+
+void PrintHomingState(long homingState, long id);
+
+SmState DriveModeHome
+    {
+    SIG_INIT            = { if(data[DATA_OldCommand] & ZBCOS_CMDM_OP_HALT) {
+                                return(SmTrans(->HomeHalted));
+                            }
+                            if(data[DATA_OldCommand] & ZBCOS_CMDM_OP_START) {
+                                SmPost(id , SIG_OP_START);
+                            }
+                            return(SmTrans(->HomeReady));
+                          }
+    SIG_IDLE            = DriveModeHome_Idle;
+
+    SmState HomeReady
+        {
+        SIG_ENTRY           = { data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12]   = 0;  // homing attained
+                                data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT13]   = 0;  // homing error
+                                data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = 1;  // target
+                                data[DATA_State]      = STATE_SM_HOMEREADY;
+                              }
+
+        SIG_HALT            = SmTrans(HomeHalted);
+        SIG_OP_START        = {
+      	  						if(ZBCO_HOMEMODE(id)<(-100))
+      	  							return(SmTrans(HomeProcessCustom));
+      	  						else
+        							return(SmTrans(HomeProcessMACS));
+        					  }
+        }
+    SmState HomeProcessCustom
+    {
+    	//Self-start process because the CustomHomeStart function can only be started correctly via a signal.
+    	SIG_INIT			= {SmPost(id, SIG_OP_START);}
+    	SIG_IDLE			= SmNotHandled;
+    	SIG_OP_START		= CustomHomeStart;
+
+    	SIG_HALT            = SmTrans(<-*->HomeHalted);
+		/*
+		** They are only used via the custom homing mehtodes (OPModeCustomHome.mh).
+		*/
+
+		SmState HomeSearchSwitch
+			{
+			SIG_ENTRY           = { print("Axis ",id,": Enter state OperationEnabled - HomeModeSearchSwitch");
+									data[DATA_State]      = STATE_SM_HOMESEARCHSWITCH;
+								  }
+			SIG_IDLE            = HomeSearchSwitch_Idle;
+			}
+
+		SmState HomeSearchIndex
+			{
+			SIG_ENTRY           = { print("Axis ",id,": Enter state OperationEnabled - HomeModeSearchIndex");
+									data[DATA_State]      = STATE_SM_HOMESEARCHINDEX;
+								  }
+			SIG_IDLE            = HomeSearchIndex_Idle;
+			}
+
+		SmState HomePosIndex
+			{
+			SIG_ENTRY           = { print("Axis ",id,": Enter state OperationEnabled - HomeModePosIndex");
+									data[DATA_State]      = STATE_SM_HOMEPOSINDEX;
+								  }
+
+			SIG_IDLE            = HomePosIndex_Idle;
+
+			}
+    }
+
+    SmState HomeProcessMACS
+        {
+        SIG_ENTRY           = {     data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12]   = 0;
+									data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT13]   = 0;
+									data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = 0;  // target
+
+									data[DATA_HomeMode]      = ZBCO_HOMEMODE(id);
+									data[DATA_HomeStartTime] = Time();
+									data[DATA_HomeReversed]  = FALSE;
+									print("Axis ",id,": Enter state MACS HomeStart");
+
+									AxisHomeStart(id);
+                              }
+
+		SIG_IDLE			= HomeProcess_Idle;
+
+        SIG_HALT            = SmTrans(<-*->HomeHalted);
+        }
+    SmState HomeHalted
+        {
+        SIG_ENTRY           = { print("Axis ",id,": Enter state OperationEnabled - HomeModeHalt");
+                                data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12]   = 0;  // homing attained
+                                data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT13]   = 0;  // homing error
+                                data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = 1;  // target
+                                data[DATA_State]      = STATE_SM_HOMEHALT;
+                                Dec(id, ZBCO_INTERNALDEC(id));
+                                AxisHomeStop(id);
+                                AxisStop(id);
+                                return(SmHandled);
+                              }
+
+        SIG_NOHALT          = SmTrans(HomeReady);
+        }
+
+
+    SmState HomeDone
+        {
+        SIG_ENTRY           = { print("Axis ",id,": Enter state HomeDone");
+                                data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12]   = 1;  // homing attained
+                                data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT13]   = 0;  // homing error
+                                data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = 1;  // target
+                                data[DATA_State]      = STATE_SM_HOMEDONE;
+                                if (ZBCO_POSITIONOPTCODE(id) & ZBCOS_POSOPT_POSRESPONSE_AUTO_READY) {
+                                    // wenn das ein OP_NOSTART auslöst sind die status bits wieder weg ?? geht das bei Zoller ??    Tbd
+                                    ZBCO_CONTROLWORD(id).i5 = 0;     // Bit 5 (START) will be reset. (simular to position mode)
+                                    //!!!!! geht so nicht, müsste in newcmd, sonst wird flanke nicht erkannt                  Tbd
+                                    data[DATA_OldCommand] = data[DATA_OldCommand] & ~ZBCOS_CMDM_OP_START;  // we also have to do that in case of applications with counter check
+                                }
+                              }
+        SIG_HALT            = SmTrans(HomeHalted);
+        SIG_OP_NOSTART      = SmTrans(HomeReady);
+        }
+
+    SmState HomeError
+        {
+        SIG_ENTRY           = { print("Axis ",id,": Enter state OperationEnabled - HomeModeHalt");
+                                data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12]   = 0;  // homing attained
+                                data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT13]   = 1;  // homing error
+                                // depending on vcmd the target bit is set
+                                if(SYS_PFG_VCMD(id) == 0) {
+                                    data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = 1;  // target
+                                } else {
+                                    data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = 0;  // target
+                                }
+                                data[DATA_State]      = STATE_SM_HOMEERROR;
+                              }
+        SIG_HALT            = SmTrans(HomeHalted);
+        SIG_OP_NOSTART      = SmTrans(HomeReady);
+        }
+
+
+
+    }
+
+/*********************************************************************
+**
+**                 DriveModeHome State Functions
+**                 -----------------------------
+*/
+
+long DriveModeHome_Idle(long id, long signal, long event[], long data[])
+{
+    /*
+    ** Check for changes in HALT bit or START bit of command word and fire signals if necessary
+    */
+
+    // The sequence of the following lines is important (NOHALT before START).
+    // if a NOHALT and START is done with the same command, then we first have to execute the NOHALT
+    // and then the START.
+    // The other way around is not important, because the HALT changes to the halt state any way
+    // and the NOSTART is then ignored.
+    if(data[DATA_PosCmdEdges] & ZBCOS_CMDM_OP_HALT) {
+        SmPost(id, SIG_HALT);
+    }
+    if(data[DATA_NegCmdEdges] & ZBCOS_CMDM_OP_HALT) {
+        SmPost(id, SIG_NOHALT);
+    }
+
+    if(data[DATA_PosCmdEdges] & ZBCOS_CMDM_OP_START) {
+        SmPost(id, SIG_OP_START);
+    }
+
+    if(data[DATA_NegCmdEdges] & ZBCOS_CMDM_OP_START) {
+        SmPost(id, SIG_OP_NOSTART);
+    }
+
+    /*
+    ** It is important that we do NOT "handle" the Idle event here.  This allows
+    ** the Idle event to be passed up the superstate chain so that all the normal
+    ** Idle processing gets a chance to run.
+    */
+    return(SmNotHandled);
+}
+
+
+long HomeProcess_Idle(long id, long signal, long event[], long data[])
+{
+    /*
+    ** We are currently waiting for home to be reached.  Check
+    ** if we need to transition to a different state.
+    */
+	data[DATA_HomeState] = AxisHomeStatus(id);
+
+	if((data[DATA_HomeState] != 100) && (data[DATA_HomeState] > 0))
+	{
+		data[DATA_HomeState] = AxisHomeStatus(id);
+
+		if(data[DATA_HomeState] != data[DATA_HomeStateOld] )
+		{
+			PrintHomingState(data[DATA_HomeState], id);
+		}
+
+		data[DATA_HomeStateOld] = data[DATA_HomeState];
+	}
+	else if (data[DATA_HomeState] == 100)
+	{
+		PrintHomingState(data[DATA_HomeState], id);
+		return(SmTrans(<-*->HomeDone));
+	}
+	else
+	{
+		PrintHomingState(data[DATA_HomeState], id);
+		return(SmTrans(<-*->HomeError));
+	}
+
+	/*
+	** Let the superstate have a chance to deal with the Idle event.
+	*/
+	return(SmNotHandled);
+
+}
+
+void PrintHomingState(long homingState, long id)
+{
+	printf("Axis %d: ", id);
+    switch(homingState)
+    {
+    	case 0: 	print("Homing Idle"); break;
+		case 1: 	print("Homing Start"); break;
+		case 2: 	print("Wait for negative limit switch rising edge "); break;
+		case 3: 	print("Wait for negative limit switch falling edge "); break;
+		case 4: 	print("Wait for positive limit switch rising edge "); break;
+		case 5: 	print("Wait for positive limit switch falling edge "); break;
+		case 6: 	print("Wait for home switch rising edge "); break;
+		case 7: 	print("Wait for home switch falling edge "); break;
+		case 8: 	print("Wait for encoder index pulse "); break;
+		case 9: 	print("Wait for motor current over CUR_THRESHOLD "); break;
+		case 10: 	print("Wait for motor movement to finish "); break;
+		case 100: 	print("Homing is finished "); break;
+		case -1: 	print("Encoder index pulse has not been found within two encoder revolutions "); break;
+		case -2: 	print("General axis error occured (see Error reference) "); break;
+		case -3: 	print("Invalid HOME_TYPE value "); break;
+		default:    print("Unkown homing state");
+
+    }
+}

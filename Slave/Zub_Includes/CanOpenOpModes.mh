@@ -1,0 +1,21 @@
+/*********************************************************************
+**
+**                  CanOpen Operational Modes
+**                  -------------------------
+*/
+
+#include "OpModeVelocity.mh"
+#include "OpModeInterpolPos.mh"
+#include "OpModePosition.mh"
+#include "OpModeHome.mh"
+#include "OpModeCSP.mh"
+#include "OpModeCSV.mh"
+#include "OpModeCST.mh"
+#include "..\Custom_Includes\OpModeAppE0.mh"
+#include "..\Custom_Includes\OpModeAppE1.mh"
+
+/*
+** Other modes can easily be included here using additional #include
+** statements.  If this is done, then remember to modify the routine
+** "CanOpenTestOpMode" so that a transition can be made to the new mode.
+*/

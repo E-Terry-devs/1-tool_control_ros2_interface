@@ -1,0 +1,27 @@
+long eTerry_encoders(void)
+{
+	DO_BREAK_ACT_DRIVE_1(1);
+	DO_BREAK_ACT_DRIVE_2(1);
+	DO_BREAK_ACT_DRIVE_3(1);
+	print("ACTUATING_DRIVE_3:	", Apos(ACTUATING_DRIVE_3));
+//	while(1)
+//	{
+//		print("");
+//		print("ACTUATING_DRIVE_1:	", Apos(ACTUATING_DRIVE_1));
+//		print("ACTUATING_DRIVE_2:	", Apos(ACTUATING_DRIVE_2));
+//		print("ACTUATING_DRIVE_3:	", Apos(ACTUATING_DRIVE_3));
+//		print("WHEEL_DRIVE_1:		", Apos(WHEEL_DRIVE_1));
+//		print("WHEEL_DRIVE_2:		", Apos(WHEEL_DRIVE_2));
+//		print("WHEEL_DRIVE_3:		", Apos(WHEEL_DRIVE_3));
+//		print("");
+//
+//		print("");
+//		Delay(2000);
+//	}
+
+    return(1);
+}
+
+
+
+

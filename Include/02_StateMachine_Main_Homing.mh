@@ -1,0 +1,268 @@
+/*********************************************************************
+** StateMachine Subfile
+**
+** This file is included inside the main state machine and
+** contains the complete state "homing". Homing is performed after
+** each reboot.
+**
+*********************************************************************/
+
+
+
+/*********************************************************************
+** State Definitions
+*********************************************************************/
+SmState Homing
+{
+	SIG_INIT	=
+	{
+		//SmPublish(SIG_LED_ON, LED_PERIOD_WAIT, 1,1,1);
+
+			return(SmTrans(->HomingDrives->Drive));
+	}
+
+	SIG_ENTRY 	=
+	{
+		print("SM: Homing - Entry");
+		USER_PARAM(USER_MONITOR_COMMAND) 	= CMD_IDLE;
+		USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_HOMING;
+	}
+	SmState HomingDrives
+	{
+
+
+		long i, retval = 0, axiswheelhome, axisacthome;
+    	long homingStateAct_1=0,homingStateWD_1=0,homingStateAct_3=0,homingStateWD_3=0;
+		long zeroIndexState;
+		long zeroOffset[3];
+		SIG_ENTRY 	=
+		{
+			print("SM: HomingDrives - Entry");
+			print("Actuating drive On for homing");
+			AxisControl(ACTUATING_DRIVE_1,OFF,ACTUATING_DRIVE_2,OFF,ACTUATING_DRIVE_3,OFF);
+			AxisControl(WHEEL_DRIVE_1,OFF,WHEEL_DRIVE_2,OFF,WHEEL_DRIVE_3,OFF);
+
+			skdEnableAxisSoftwareLimit( ACTUATING_DRIVE_1, 0);
+			skdEnableAxisSoftwareLimit( ACTUATING_DRIVE_2, 0);
+			skdEnableAxisSoftwareLimit( ACTUATING_DRIVE_3, 0);
+
+
+            /*while(1)
+            {
+                DO_BREAK_ACT_DRIVE_1(1);
+				DO_BREAK_ACT_DRIVE_2(1);
+				DO_BREAK_ACT_DRIVE_3(1);
+				print(AI_CNF_HOME_TRAV_1,AI_CNF_HOME_TRAV_2,AI_CNF_HOME_TRAV_3);
+				Delay(1000);
+			}*/
+			if(gConfigTyp==MECH_CONFIG_1)
+			{
+				zeroOffset [0] = scaleHomingHall(HOME_TRAV_1_CONFIG_1, AI_CNF_HOME_TRAV_1);// in deg.
+				zeroOffset [1] = scaleHomingHall(HOME_TRAV_2_CONFIG_1, AI_CNF_HOME_TRAV_2);
+				zeroOffset [2] = scaleHomingHall(HOME_TRAV_3_CONFIG_1, AI_CNF_HOME_TRAV_3);
+				// zeroOffset [0] = scaleHomingHall(2000, 4500);// in deg.
+				// zeroOffset [1] = scaleHomingHall(2000, 1000);
+				// zeroOffset [2] = scaleHomingHall(2000, 31500);
+			}
+			else if (gConfigTyp==MECH_CONFIG_2)
+			{
+				zeroOffset [0] = scaleHomingHall(HOME_TRAV_1_CONFIG_2, AI_CNF_HOME_TRAV_1);// in deg.
+				zeroOffset [1] = scaleHomingHall(HOME_TRAV_2_CONFIG_2, AI_CNF_HOME_TRAV_2);
+				zeroOffset [2] = scaleHomingHall(HOME_TRAV_3_CONFIG_2, AI_CNF_HOME_TRAV_3);
+			}
+			else if (gConfigTyp==MECH_CONFIG_3)
+			{
+				zeroOffset [0] = scaleHomingHall(HOME_TRAV_1_CONFIG_3, AI_CNF_HOME_TRAV_1);// in deg.
+				zeroOffset [1] = scaleHomingHall(HOME_TRAV_2_CONFIG_3, AI_CNF_HOME_TRAV_2);
+				zeroOffset [2] = scaleHomingHall(HOME_TRAV_3_CONFIG_3, AI_CNF_HOME_TRAV_3);
+			}
+			else if (gConfigTyp==MECH_CONFIG_4)
+			{
+				zeroOffset [0] = scaleHomingHall(HOME_TRAV_1_CONFIG_4, AI_CNF_HOME_TRAV_1);// in deg.
+				zeroOffset [1] = scaleHomingHall(HOME_TRAV_2_CONFIG_4, AI_CNF_HOME_TRAV_2);
+				zeroOffset [2] = scaleHomingHall(HOME_TRAV_3_CONFIG_4, AI_CNF_HOME_TRAV_3);
+			}
+				/*print("a");
+				print(zeroOffset[0]);
+				print(zeroOffset[1]);
+				print(zeroOffset[2]);
+				Delay(2000);
+            }*/
+		}
+		SmState Drive
+		{
+			SIG_ENTRY =
+			{
+				SmPublish(SIG_ACT_BREAK,1,1,1);
+				SmPublish(SIG_WHEEL_BRAKE,1,1,1);
+				Delay(5);
+			}
+			SIG_IDLE =
+			{
+				if(gActBreakOpen[0]==1&&gActBreakOpen[1]==1&&gActBreakOpen[2]==1)
+				{
+					return(SmTrans(->CheckDrives_Trav));
+				}
+			}
+
+			// Search zero index position of the actuating drives
+			SmState CheckDrives_Trav
+			{
+				SIG_ENTRY	=
+				{
+					print("SM: Homing - Entry");
+					USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_HOMING_WAIT;
+				}
+				SIG_IDLE	=
+				{
+					if((AxisMoving(ACTUATING_DRIVE_1))==0 && (AxisMoving(ACTUATING_DRIVE_2))==0 && (AxisMoving(ACTUATING_DRIVE_3))==0)
+					{
+						print("Axis is stopped");
+						#if SOFT_LIMIT_ERROR_ON == 1
+							skdSetupAxisSoftwareLimit(ACTUATING_DRIVE_2, (-MECH_BOUND_ACTUATOR_2 - ACT_DRV_2_HOME_INDEX_OFFS), (+MECH_BOUND_ACTUATOR_2 + ACT_DRV_2_HOME_INDEX_OFFS));
+							skdEnableAxisSoftwareLimit( ACTUATING_DRIVE_2, 1);
+							skdSetupAxisSoftwareLimit(ACTUATING_DRIVE_1, (-MECH_BOUND_ACTUATOR_1 - ACT_DRV_1_HOME_INDEX_OFFS), (+MECH_BOUND_ACTUATOR_1 + ACT_DRV_1_HOME_INDEX_OFFS));
+							skdEnableAxisSoftwareLimit( ACTUATING_DRIVE_1, 1);
+							skdSetupAxisSoftwareLimit(ACTUATING_DRIVE_3, (-MECH_BOUND_ACTUATOR_3 - ACT_DRV_3_HOME_INDEX_OFFS), (+MECH_BOUND_ACTUATOR_3 + ACT_DRV_3_HOME_INDEX_OFFS));
+							skdEnableAxisSoftwareLimit( ACTUATING_DRIVE_3, 1);
+						#endif
+						return(SmTrans(HomePos_Drive));
+					}
+				}
+
+			}
+			SmState HomePos_Drive
+			{
+				SIG_ENTRY	=
+				{
+					print("SM: HomePos_Drive - Entry");
+					USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_HOMING_ZERO_MOVE;
+
+					// Vel(ACTUATING_DRIVE_2,ACT_DRIVE_HOME_VEL_ZERO);
+					// Acc(ACTUATING_DRIVE_2,ACT_DRIVE_HOME_ACC_ZERO);
+					// Dec(ACTUATING_DRIVE_2,ACT_DRIVE_HOME_DEC_ZERO);
+
+					// Vel(WHEEL_DRIVE_2,WHEEL_DRIVE_HOMING_VEL_ZERO);
+					// Acc(WHEEL_DRIVE_2,WHEEL_DRIVE_HOMING_ACC_ZERO);
+					// Dec(WHEEL_DRIVE_2,WHEEL_DRIVE_HOMING_DEC_ZERO);
+					Vel(AXALL,ACT_DRIVE_HOME_VEL_ZERO);
+					Acc(AXALL,ACT_DRIVE_HOME_ACC_ZERO);
+					Dec(AXALL,ACT_DRIVE_HOME_DEC_ZERO);
+
+
+					AXE_PARAM(ACTUATING_DRIVE_2, HOME_TYPE) 		= 37;
+
+					ZBCO_HOMEOFFSET(ACTUATING_DRIVE_2)				= zeroOffset [1];
+
+					// Disable for homing
+					AXE_PARAM(ACTUATING_DRIVE_1,POSERR) = 0;
+					AXE_PARAM(ACTUATING_DRIVE_2,POSERR) = 0;
+					AXE_PARAM(ACTUATING_DRIVE_3,POSERR) = 0;
+					AXE_PARAM(WHEEL_DRIVE_1,POSERR) = 0;
+					AXE_PARAM(WHEEL_DRIVE_2,POSERR) = 0;
+					AXE_PARAM(WHEEL_DRIVE_3,POSERR) = 0;
+
+
+					AXE_PARAM(WHEEL_DRIVE_2, HOME_TYPE) 		= 37;
+					AXE_PARAM(WHEEL_DRIVE_2, HOME_OFFSET)  		= 0;
+
+					#if !DISABLE_MINIMACS6_TRAV_1
+						SdoWrite( MIM6_BUSID_TRAV_1, 0x6098 + MINIMACS6_AXOFFSET*S_AX_ACTUATING_DRIVE, 	0,   37);	// Select "Home at actual position"
+						ZBCO_HOMEOFFSET(ACTUATING_DRIVE_1)				= zeroOffset [0];
+						SdoWrite( MIM6_BUSID_TRAV_1, 0x607C + MINIMACS6_AXOFFSET*S_AX_ACTUATING_DRIVE, 	0,   AXE_PARAM(ACTUATING_DRIVE_1, HOME_OFFSET));   	// Set homing offset to [uu]
+
+
+						SdoWrite( MIM6_BUSID_TRAV_1, 0x6098 + MINIMACS6_AXOFFSET*S_AX_WHEEL_DRVE, 	0,   37);	// Select "Home at actual position"
+						SdoWrite( MIM6_BUSID_TRAV_1, 0x607C + MINIMACS6_AXOFFSET*S_AX_WHEEL_DRVE, 	0,   0);   	// Set homing offset to [uu]
+					#endif
+					#if !DISABLE_MINIMACS6_TRAV_3
+						SdoWrite( MIM6_BUSID_TRAV_3, 0x6098 + MINIMACS6_AXOFFSET*S_AX_ACTUATING_DRIVE, 	0,   37);	// Select "Home at actual position"
+						ZBCO_HOMEOFFSET(ACTUATING_DRIVE_3)				= zeroOffset [2];
+						SdoWrite( MIM6_BUSID_TRAV_3, 0x607C + MINIMACS6_AXOFFSET*S_AX_ACTUATING_DRIVE, 	0, AXE_PARAM(ACTUATING_DRIVE_3, HOME_OFFSET));   	// Set homing offset to [uu]
+
+						SdoWrite( MIM6_BUSID_TRAV_3, 0x6098 + MINIMACS6_AXOFFSET*S_AX_WHEEL_DRVE, 	0,   37);	// Select "Home at actual position"
+						SdoWrite( MIM6_BUSID_TRAV_3, 0x607C + MINIMACS6_AXOFFSET*S_AX_WHEEL_DRVE, 	0,   0);   	// Set homing offset to [uu]
+					#endif
+					AxisHomeStart(ACTUATING_DRIVE_2, WHEEL_DRIVE_2);
+					retval=0;
+					homingStateAct_1=0;
+					homingStateWD_1=0;
+					homingStateAct_3=0;
+					homingStateWD_3=0;
+
+				}
+				SIG_IDLE	=
+				{
+					// Homing statemachine
+
+					axisacthome =   AxisHomeStatus(ACTUATING_DRIVE_2),
+					axiswheelhome =   AxisHomeStatus(ACTUATING_DRIVE_2),
+					#if !DISABLE_MINIMACS6_TRAV_1
+						retval.i[0] = 	miniM6_AxisHomingStart(ACTUATING_DRIVE_1, S_AX_ACTUATING_DRIVE, MIM6_BUSID_TRAV_1, MINIMACS6_OP_CSP, homingStateAct_1);
+						retval.i[1] =  	miniM6_AxisHomingStart(WHEEL_DRIVE_1, S_AX_WHEEL_DRVE, MIM6_BUSID_TRAV_1, MINIMACS6_OP_CSV, homingStateWD_1);
+					#else
+						retval.i[0] = 1;
+						retval.i[1] = 1;
+					#endif
+
+					#if !DISABLE_MINIMACS6_TRAV_1
+						retval.i[2] =  	miniM6_AxisHomingStart(ACTUATING_DRIVE_3, S_AX_ACTUATING_DRIVE, MIM6_BUSID_TRAV_3, MINIMACS6_OP_CSP, homingStateAct_3);
+						retval.i[3] =  	miniM6_AxisHomingStart(WHEEL_DRIVE_3, S_AX_WHEEL_DRVE, MIM6_BUSID_TRAV_3, MINIMACS6_OP_CSV, homingStateWD_3);
+					#else
+						retval.i[2] = 1;
+						retval.i[3] = 1;
+					#endif
+					if(retval == 0x0F && axisacthome == 100 && axiswheelhome == 100)
+					{
+						return(SmTrans(HomePos_ZeroMove));
+						//return(SmTrans(<-*->MotorsOff));
+					}
+				}
+				SIG_EXIT	=
+				{
+					// Enable after homing
+					AXE_PARAM(ACTUATING_DRIVE_1,POSERR) = ACTUATING_DRIVE_TRACKERR;
+					AXE_PARAM(ACTUATING_DRIVE_2,POSERR) = ACTUATING_DRIVE_TRACKERR;
+					AXE_PARAM(ACTUATING_DRIVE_3,POSERR) = ACTUATING_DRIVE_TRACKERR;
+					AXE_PARAM(WHEEL_DRIVE_1,POSERR) = WHEEL_DRIVE_TRACKERR;
+					AXE_PARAM(WHEEL_DRIVE_2,POSERR) = WHEEL_DRIVE_TRACKERR;
+					AXE_PARAM(WHEEL_DRIVE_3,POSERR) = WHEEL_DRIVE_TRACKERR;
+				}
+			} // HomePos_Drive
+			SmState HomePos_ZeroMove
+			{
+				SIG_ENTRY =
+				{
+					print("start zero movement");
+					AxisControl(ACTUATING_DRIVE_1,ON,ACTUATING_DRIVE_2,ON,ACTUATING_DRIVE_3,ON);
+					AxisControl(WHEEL_DRIVE_1,OFF,WHEEL_DRIVE_2,OFF,WHEEL_DRIVE_3,OFF);
+				}
+				SIG_IDLE =
+				{
+					if(ACT_DRIVE_BREAK_OPEN)
+					{
+						AxisPosAbsStart(ACTUATING_DRIVE_1, 0, ACTUATING_DRIVE_2, 0, ACTUATING_DRIVE_3, 0);
+						AxisTargetReached(ACTUATING_DRIVE_1);
+						AxisTargetReached(ACTUATING_DRIVE_2);
+						AxisTargetReached(ACTUATING_DRIVE_3);
+					}
+
+					if(ACTUTATING_DRIVE_TAR_RECH)
+					{
+						gHomeDone = 1;
+						AxisControl(WHEEL_DRIVE_1,ON,WHEEL_DRIVE_2,ON,WHEEL_DRIVE_3,ON);
+						return(SmTrans(<-*->MotorsOff));
+					}
+				}
+			}
+
+
+		}// Drive
+	}
+}
+
+
+/*********************************************************************
+** State Machine Functions
+*********************************************************************/
+

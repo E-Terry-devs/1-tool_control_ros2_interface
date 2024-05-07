@@ -1,0 +1,503 @@
+header SW 99.99.99 HW CS1 OPT -- PRJ  CAN 0 13
+sdobegin 0x2200 0 26  // GLB_PARAM
+sdoval 0 101        // Largest Index
+sdoval 1 1          // CANNR
+sdoval 2 55         // CANBAUD
+sdoval 3 -1         // PRGPAR
+sdoval 4 0          // I_PRGSTART
+sdoval 5 0          // I_PRGCHOICE
+sdoval 6 0          // I_BREAK
+sdoval 7 0          // I_CONTINUE
+sdoval 8 0          // I_ERRCLR
+sdoval 9 0          // O_ERROR
+sdoval 10 0         // AINFTIME
+sdoval 11 0         // EXTERNALV24
+sdoval 12 0         // RSTERMINATION
+sdoval 13 921600    // RSBAUDRATE
+sdoval 14 0         // IOMODE
+sdoval 15 1         // CANSYNCTIMER
+sdoval 16 20        // CANGUARDTIMER
+sdoval 17 0         // VMENCTYP
+sdoval 18 500       // VMENCRES
+sdoval 19 0         // VMENCMTYP
+sdoval 20 0         // IPADDRESSMODE
+sdoval 21 69804     // IPSUBNET
+sdoval 22 0         // PRGSTARTCOND
+sdoval 23 0         // ESCCONDGLB
+sdoval 24 0         // IPMASK
+sdoval 25 0         // IPDEFAULTGW
+sdoend
+sdobegin 0x2201 0 101  // USER_PARAM
+sdoval 0 100        // Largest Index
+sdoval 1 0          // User Parameter
+sdoval 2 0          // User Parameter
+sdoval 3 0          // User Parameter
+sdoval 4 0          // User Parameter
+sdoval 5 0          // User Parameter
+sdoval 6 0          // User Parameter
+sdoval 7 0          // User Parameter
+sdoval 8 0          // User Parameter
+sdoval 9 0          // User Parameter
+sdoval 10 0         // User Parameter
+sdoval 11 0         // User Parameter
+sdoval 12 0         // User Parameter
+sdoval 13 0         // User Parameter
+sdoval 14 0         // User Parameter
+sdoval 15 0         // User Parameter
+sdoval 16 0         // User Parameter
+sdoval 17 0         // User Parameter
+sdoval 18 0         // User Parameter
+sdoval 19 0         // User Parameter
+sdoval 20 0         // User Parameter
+sdoval 21 0         // User Parameter
+sdoval 22 0         // User Parameter
+sdoval 23 0         // User Parameter
+sdoval 24 0         // User Parameter
+sdoval 25 0         // User Parameter
+sdoval 26 0         // User Parameter
+sdoval 27 0         // User Parameter
+sdoval 28 0         // User Parameter
+sdoval 29 0         // User Parameter
+sdoval 30 0         // User Parameter
+sdoval 31 0         // User Parameter
+sdoval 32 0         // User Parameter
+sdoval 33 0         // User Parameter
+sdoval 34 0         // User Parameter
+sdoval 35 0         // User Parameter
+sdoval 36 0         // User Parameter
+sdoval 37 0         // User Parameter
+sdoval 38 0         // User Parameter
+sdoval 39 0         // User Parameter
+sdoval 40 0         // User Parameter
+sdoval 41 0         // User Parameter
+sdoval 42 0         // User Parameter
+sdoval 43 0         // User Parameter
+sdoval 44 0         // User Parameter
+sdoval 45 0         // User Parameter
+sdoval 46 0         // User Parameter
+sdoval 47 0         // User Parameter
+sdoval 48 0         // User Parameter
+sdoval 49 0         // User Parameter
+sdoval 50 0         // User Parameter
+sdoval 51 0         // User Parameter
+sdoval 52 0         // User Parameter
+sdoval 53 0         // User Parameter
+sdoval 54 0         // User Parameter
+sdoval 55 0         // User Parameter
+sdoval 56 0         // User Parameter
+sdoval 57 0         // User Parameter
+sdoval 58 0         // User Parameter
+sdoval 59 0         // User Parameter
+sdoval 60 0         // User Parameter
+sdoval 61 0         // User Parameter
+sdoval 62 0         // User Parameter
+sdoval 63 0         // User Parameter
+sdoval 64 0         // User Parameter
+sdoval 65 0         // User Parameter
+sdoval 66 0         // User Parameter
+sdoval 67 0         // User Parameter
+sdoval 68 0         // User Parameter
+sdoval 69 0         // User Parameter
+sdoval 70 0         // User Parameter
+sdoval 71 0         // User Parameter
+sdoval 72 0         // User Parameter
+sdoval 73 0         // User Parameter
+sdoval 74 0         // User Parameter
+sdoval 75 0         // User Parameter
+sdoval 76 0         // User Parameter
+sdoval 77 0         // User Parameter
+sdoval 78 0         // User Parameter
+sdoval 79 0         // User Parameter
+sdoval 80 0         // User Parameter
+sdoval 81 0         // User Parameter
+sdoval 82 0         // User Parameter
+sdoval 83 0         // User Parameter
+sdoval 84 0         // User Parameter
+sdoval 85 0         // User Parameter
+sdoval 86 0         // User Parameter
+sdoval 87 0         // User Parameter
+sdoval 88 0         // User Parameter
+sdoval 89 0         // User Parameter
+sdoval 90 0         // User Parameter
+sdoval 91 0         // User Parameter
+sdoval 92 0         // User Parameter
+sdoval 93 0         // User Parameter
+sdoval 94 0         // User Parameter
+sdoval 95 0         // User Parameter
+sdoval 96 0         // User Parameter
+sdoval 97 0         // User Parameter
+sdoval 98 0         // User Parameter
+sdoval 99 0         // User Parameter
+sdoval 100 0        // User Parameter
+sdoend
+sdobegin 0x2300 0 137  // Axis 0 Temporary Params
+sdoval 0 136        // Largest Index
+sdoval 1 0          // DRIVETYPE
+sdoval 2 1000       // VELMAX
+sdoval 3 500        // ENCODER
+sdoval 4 0          // HOME_FORCE
+sdoval 5 -500000    // NEGLIMIT
+sdoval 6 500000     // POSLIMIT
+sdoval 7 0          // SYNCMMAXCORR
+sdoval 8 10         // HOME_VEL
+sdoval 9 0          // TESTWIN
+sdoval 10 2184533   // VELMAXQC
+sdoval 11 2184      // ACCMAXQC
+sdoval 12 30        // KPROP
+sdoval 13 0         // KDER
+sdoval 14 0         // KINT
+sdoval 15 1         // TIMER
+sdoval 16 20000     // POSERR
+sdoval 17 0         // SYNCOFFTIME
+sdoval 18 0         // SYNCMFPAR
+sdoval 19 0         // SYNCMFTIME
+sdoval 20 0         // SWNEGLIMACT
+sdoval 21 0         // SWPOSLIMACT
+sdoval 22 1000      // KILIM
+sdoval 23 100       // VELRES
+sdoval 24 1000      // POSFACT_Z
+sdoval 25 0         // TESTTIM
+sdoval 26 1         // TESTVAL
+sdoval 27 1000      // POSFACT_N
+sdoval 28 0         // ENCODERTYPE
+sdoval 29 1         // POSDRCT
+sdoval 30 1000      // PROFTIME
+sdoval 31 500       // MENCODER
+sdoval 32 1000      // RAMPMIN
+sdoval 33 0         // RAMPTYPE
+sdoval 34 50        // DFLTVEL
+sdoval 35 50        // DFLTACC
+sdoval 36 1000      // BANDWIDTH
+sdoval 37 0         // FFVEL
+sdoval 38 0         // FFACC
+sdoval 39 0         // REGWMAX
+sdoval 40 0         // REGWMIN
+sdoval 41 0         // HOME_TYPE
+sdoval 42 50        // HOME_RAMP
+sdoval 43 0         // HOME_OFFSET
+sdoval 44 0         // ERRCOND
+sdoval 45 0         // ENDSWMOD
+sdoval 46 0         // I_REFSWITCH
+sdoval 47 0         // I_POSLIMITSW
+sdoval 48 0         // I_NEGLIMITSW
+sdoval 49 0         // O_BRAKE
+sdoval 50 1         // SYNCFACTM
+sdoval 51 1         // SYNCFACTS
+sdoval 52 0         // SYNCTYPE
+sdoval 53 1         // SYNCMARKM
+sdoval 54 1         // SYNCMARKS
+sdoval 55 0         // SYNCPOSOFFS
+sdoval 56 1000      // SYNCACCURACY
+sdoval 57 1         // SYNCREADY
+sdoval 58 10        // SYNCFAULT
+sdoval 59 500       // SYNCMPULSM
+sdoval 60 500       // SYNCMPULSS
+sdoval 61 0         // SYNCMTYPM
+sdoval 62 0         // SYNCMTYPS
+sdoval 63 0         // SYNCMSTART
+sdoval 64 0         // REVERS
+sdoval 65 0         // O_AXMOVE
+sdoval 66 0         // SYNCVFTIME
+sdoval 67 0         // SYNCVELREL
+sdoval 68 0         // MENCODERTYPE
+sdoval 69 0         // SYNCMWINM
+sdoval 70 0         // SYNCMWINS
+sdoval 71 1         // ESCCOND
+sdoval 72 25        // ENCODERDATLEN
+sdoval 73 1         // ENCODERTERM
+sdoval 74 1         // ENCODERCLOCK
+sdoval 75 262000    // ENCODERFREQ
+sdoval 76 25        // MENCODERDATLEN
+sdoval 77 1         // MENCODERTERM
+sdoval 78 1         // MENCODERCLOCK
+sdoval 79 262000    // MENCODERFREQ
+sdoval 80 1         // STATUSMONITORING
+sdoval 81 0         // ENCODERDELAY
+sdoval 82 0         // MENCODERDELAY
+sdoval 83 0         // ENCODERMONITORING
+sdoval 84 0         // MENCODERMONITORING
+sdoval 85 0         // ENCODERABSTURNS
+sdoval 86 0         // MENCODERABSTURNS
+sdoval 87 0         // ENCODERABSTYPE
+sdoval 88 0         // MENCODERABSTYPE
+sdoval 89 8192      // ENCODERABSRES
+sdoval 90 8192      // MENCODERABSRES
+sdoval 91 200       // VELKPROP
+sdoval 92 5         // VELKINT
+sdoval 93 200       // CURKPROP
+sdoval 94 100       // CURKINT
+sdoval 95 2000      // AMPMAXCUR
+sdoval 96 1         // AMPCOMMTYPE
+sdoval 97 24000     // AMPPWMFREQ
+sdoval 98 3         // AMPMODE
+sdoval 99 100       // JERKMIN
+sdoval 100 1        // ENCODERNO
+sdoval 101 0        // JERKMIN2
+sdoval 102 0        // JERKMIN3
+sdoval 103 0        // JERKMIN4
+sdoval 104 1000     // VELKILIM
+sdoval 105 1000     // CURKILIM
+sdoval 106 0        // KILIMTIME
+sdoval 107 0        // SYNCSFTIME
+sdoval 108 0        // ENCCONTROL
+sdoval 109 0        // MENCCONTROL
+sdoval 110 0        // SYNCFFVEL
+sdoval 111 0        // SYNCVFLIMIT
+sdoval 112 0        // POSERRTIME
+sdoval 113 2000     // FEEDDIST
+sdoval 114 1        // FEEDREV
+sdoval 115 2000     // POSENCQC
+sdoval 116 1        // POSENCREV
+sdoval 117 10       // HOMEZEROVEL
+sdoval 118 0        // I2TFTIME
+sdoval 119 0        // I2TLIMIT
+sdoval 120 0        // CURFTIME
+sdoval 121 255      // ENCODERID
+sdoval 122 9600     // ENCODERBAUD
+sdoval 123 2        // ENCODERPARITY
+sdoval 124 255      // MENCODERID
+sdoval 125 9600     // MENCODERBAUD
+sdoval 126 2        // MENCODERPARITY
+sdoval 127 -1       // AMPENCNO
+sdoval 128 -1       // AMPENCRES
+sdoval 129 0        // AMPENCRPM
+sdoval 130 2        // MENCODERNO
+sdoval 131 0        // PISRC_SVIRTCOUNT
+sdoval 132 3        // PISRC_MVIRTCOUNT
+sdoval 133 0        // PISRC_SVIRTLATCH
+sdoval 134 3        // PISRC_MVIRTLATCH
+sdoval 135 0        // KFFACC
+sdoval 136 0        // KFFDEC
+sdoend
+sdobegin 0x2209 0 71  // SYS_INFO
+sdoval 0 70         // Largest Index
+sdoval 1 0          // SYS_HARDWARE_ID
+sdoval 2 0          // SYS_FW_CPU
+sdoval 3 0          // SYS_CUSTOMER_ID
+sdoval 4 0          // SYS_APP_SW
+sdoval 5 1          // SYS_MAX_AXES
+sdoval 6 0          // SYS_FPGA_SW_VERSION
+sdoval 7 0          // SYS_BOOTLOADER_SW_VERSION
+sdoval 8 0          // SYS_APP_VERSION_INFO1
+sdoval 9 0          // SYS_APP_VERSION_INFO2
+sdoval 10 0         // SYS_NUMBER_OF_INTEGRATED_AMPLIFIERS
+sdoval 11 0         // SYS_INTERNAL_FLASH_MEMORY
+sdoval 12 0         // SYS_FW_AMPLIFIER_VERSION
+sdoval 13 0         // SYS_FW_COPROCESSOR_VERSION
+sdoval 14 0         // SYS_IP_ADDRESS_CONTROLLER
+sdoval 15 0         // SYS_ANALOG_OPTION_TYPE
+sdoval 16 0         // SYS_SD_CARD_STATUS
+sdoval 17 0
+sdoval 18 0
+sdoval 19 0
+sdoval 20 0         // SYS_MAX_VIRTMAST
+sdoval 21 0         // SYS_MAX_VIRTCOUNTIN
+sdoval 22 0         // SYS_MAX_VIRTLATCH
+sdoval 23 0         // SYS_MAX_VIRTAMP
+sdoval 24 0         // SYS_MAX_VIRTDIGIN
+sdoval 25 0         // SYS_MAX_VIRTDIGOUT
+sdoval 26 0         // SYS_MAX_VIRTANIN
+sdoval 27 0         // SYS_MAX_VIRTANOUT
+sdoval 28 0         // SYS_MAX_DIM_ARRAYS
+sdoval 29 0         // SYS_MAX_VIRTCUSTOMMOD
+sdoval 30 0         // SYS_MAX_VIRTPIDMOD
+sdoval 31 0
+sdoval 32 0
+sdoval 33 0
+sdoval 34 0
+sdoval 35 0
+sdoval 36 0
+sdoval 37 0
+sdoval 38 0
+sdoval 39 0
+sdoval 40 0         // SYS_ZB_AMP_NO
+sdoval 41 0         // SYS_MAX_ENCODER
+sdoval 42 0         // SYS_MAX_CNTINC
+sdoval 43 0         // SYS_MAX_CNTABS
+sdoval 44 0         // SYS_MAX_CNTUNI
+sdoval 45 0         // SYS_MAX_COMPARATORS
+sdoval 46 0         // SYS_MAX_LATCH
+sdoval 47 0         // SYS_MAX_SIGGEN
+sdoval 48 0         // SYS_MAX_DDS
+sdoval 49 0         // SYS_MAX_PULSGEN
+sdoval 50 0         // SYS_MAX_DIGIN
+sdoval 51 0         // SYS_MAX_DIGOUT
+sdoval 52 0         // SYS_MAX_ANIN
+sdoval 53 0         // SYS_MAX_ANOUT
+sdoval 54 0         // SYS_MAX_BRENCREF
+sdoval 55 0         // SYS_MAX_BRREFENC
+sdoval 56 0         // SYS_MAX_BUSINFO
+sdoval 57 0         // SYS_MAX_REFBUS
+sdoval 58 0         // SYS_MAX_HALL
+sdoval 59 0
+sdoval 60 0         // SYS_MAX_BUSMOD
+sdoval 61 0         // SYS_MAX_SHIFTREG
+sdoval 62 0         // SYS_CONTROLLER_FEATURES
+sdoval 63 0         // SYS_MAX_PDO_SDO_SIZE
+sdoval 64 0         // SYS_MAX_XTLG_SIZE
+sdoval 65 0         // SYS_BUILD_NUMBER
+sdoval 66 0         // SYS_MAX_CANBUS
+sdoval 67 0         // SYS_MAX_MACHINES
+sdoval 68 0         // SYS_COMMOPT_PROTTYPE
+sdoval 69 0         // SYS_HW_IDENTIFICATION
+sdoval 70 0         // SYS_HW_INDEX
+sdoend
+sdobegin 0x2100 0 49  // Aposs Array 0
+999000001             // ArrayTypeID:  CAM Curve
+103                   // Version:  Version
+0                     // Type:  0 = Average, 1 = End=Start, 2 = Zero, 3,4 = Gradient, 5 - VV, 6 - VA, 7 - AV, 8 - AA, 9 - Cyclic
+1701147731            // Name1:  4 ascii characters
+1735289202            // Name2:  4 ascii characters
+2037336608            // Name3:  4 ascii characters
+0                     // Name4:  4 ascii characters
+17                    // IndexCIF:  Index to curve information block
+32                    // IndexSTP:  Index to Start/Stop points
+32                    // IndexFIP:  Index to Fixpoints
+50                    // Reserved:  
+50                    // IndexPath:  Index to Path information
+50                    // Reserved:  
+50                    // Reserved:  
+50                    // Reserved:  
+50                    // IndexGrad:  Index to Gradient data
+10001                 // MasterCycleLen:  Length of curve in master units
+1000                  // SlaveCycleLen:  Maximum slave travel distance in user units
+6                     // FixPointNo:  Number of Fixpoints
+0                     // PathInfoNo:  Number of path information values
+0                     // InterpolationType:  0 = Open, 1 = Periodic, 2&3 = Spec
+0                     // SlaveStopPosition:  Slave position after stop
+0                     // CorrectionStartPoint:  Position where correction may start
+0                     // CorrectionStopPoint:  Position where correction must stop
+0                     // MaximumCorrection:  Maximum allowed correction
+0                     // Reserved:  
+0                     // StartStopNo:  Number of Start/Stop point pairs
+1                     // MMaxCycles:  Maximum cycles per minute
+0                     // MMarkerPos:  Master marker position
+0                     // SMarkerPos:  Slave marker position
+0                     // GradDataNo:  Number of gradient data values
+0                     // FixPoint_1m:  Master coordinate
+0                     // FixPoint_1s:  Slave coordinate
+4                     // FixPoint_1t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+1992                  // FixPoint_2m:  Master coordinate
+46                    // FixPoint_2s:  Slave coordinate
+1                     // FixPoint_2t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+5997                  // FixPoint_3m:  Master coordinate
+508                   // FixPoint_3s:  Slave coordinate
+1                     // FixPoint_3t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+9042                  // FixPoint_4m:  Master coordinate
+958                   // FixPoint_4s:  Slave coordinate
+1                     // FixPoint_4t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+9688                  // FixPoint_5m:  Master coordinate
+999                   // FixPoint_5s:  Slave coordinate
+1                     // FixPoint_5t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+10001                 // FixPoint_6m:  Master coordinate
+1000                  // FixPoint_6s:  Slave coordinate
+1                     // FixPoint_6t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+sdoend
+sdobegin -1 0 28    // Configuration Editor Display 0
+sdoval 0 0          // Velocity
+sdoval 1 0          // Velocity Limit
+sdoval 2 0          // Acceleration
+sdoval 3 0          // Acceleration Limit
+sdoval 4 0          // Jerk
+sdoval 5 0          // Slave Stop
+sdoval 6 0          // Start Stop
+sdoval 7 0          // Start Stop
+sdoval 8 0          // Slave Mark
+sdoval 9 0          // Correction
+sdoval 10 1         // Snap on Grid
+sdoval 11 1         // Continuous Calc
+sdoval 12 1         // Auto Scale
+sdoval 13 0         // Forward
+sdoval 14 0         // Backward
+sdoval 15 4         // Closeness
+sdoval 16 0         // Path Orientation
+sdoval 17 1         // Mouse Tracking
+sdoval 18 1         // Thinned Points
+sdoval 19 0         // Axis (0-based)
+sdoval 20 1         // Double Click
+sdoval 21 0         // Arc length CAM distance increment 1
+sdoval 22 1072693248  // Arc length CAM distance increment 2
+sdoval 23 0         // Arc length CAM scale factor 1
+sdoval 24 1079574528  // Arc length CAM scale factor 2
+sdoval 25 10        // Arc length CAM maximum deviation
+sdoval 26 0         // Background Image
+sdoval 27 1
+sdoend
+sdobegin 0x2100 1 46  // Aposs Array 1
+999000001             // ArrayTypeID:  CAM Curve
+103                   // Version:  Version
+0                     // Type:  0 = Average, 1 = End=Start, 2 = Zero, 3,4 = Gradient, 5 - VV, 6 - VA, 7 - AV, 8 - AA, 9 - Cyclic
+1936682818            // Name1:  4 ascii characters
+1867128948            // Name2:  4 ascii characters
+121                   // Name3:  4 ascii characters
+0                     // Name4:  4 ascii characters
+17                    // IndexCIF:  Index to curve information block
+32                    // IndexSTP:  Index to Start/Stop points
+32                    // IndexFIP:  Index to Fixpoints
+47                    // Reserved:  
+47                    // IndexPath:  Index to Path information
+47                    // Reserved:  
+47                    // Reserved:  
+47                    // Reserved:  
+47                    // IndexGrad:  Index to Gradient data
+10001                 // MasterCycleLen:  Length of curve in master units
+1000                  // SlaveCycleLen:  Maximum slave travel distance in user units
+5                     // FixPointNo:  Number of Fixpoints
+0                     // PathInfoNo:  Number of path information values
+0                     // InterpolationType:  0 = Open, 1 = Periodic, 2&3 = Spec
+0                     // SlaveStopPosition:  Slave position after stop
+0                     // CorrectionStartPoint:  Position where correction may start
+0                     // CorrectionStopPoint:  Position where correction must stop
+0                     // MaximumCorrection:  Maximum allowed correction
+0                     // Reserved:  
+0                     // StartStopNo:  Number of Start/Stop point pairs
+1                     // MMaxCycles:  Maximum cycles per minute
+0                     // MMarkerPos:  Master marker position
+0                     // SMarkerPos:  Slave marker position
+0                     // GradDataNo:  Number of gradient data values
+0                     // FixPoint_1m:  Master coordinate
+0                     // FixPoint_1s:  Slave coordinate
+4                     // FixPoint_1t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+2010                  // FixPoint_2m:  Master coordinate
+89                    // FixPoint_2s:  Slave coordinate
+1                     // FixPoint_2t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+5934                  // FixPoint_3m:  Master coordinate
+514                   // FixPoint_3s:  Slave coordinate
+1                     // FixPoint_3t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+8119                  // FixPoint_4m:  Master coordinate
+843                   // FixPoint_4s:  Slave coordinate
+1                     // FixPoint_4t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+10001                 // FixPoint_5m:  Master coordinate
+1000                  // FixPoint_5s:  Slave coordinate
+1                     // FixPoint_5t:  Type: 1 = Curve, 4 = Tangent, 5 - Trapezoid, 6 - 3'rd order
+sdoend
+sdobegin -1 1 28    // Configuration Editor Display 1
+sdoval 0 0          // Velocity
+sdoval 1 0          // Velocity Limit
+sdoval 2 0          // Acceleration
+sdoval 3 0          // Acceleration Limit
+sdoval 4 0          // Jerk
+sdoval 5 0          // Slave Stop
+sdoval 6 0          // Start Stop
+sdoval 7 0          // Start Stop
+sdoval 8 0          // Slave Mark
+sdoval 9 0          // Correction
+sdoval 10 1         // Snap on Grid
+sdoval 11 1         // Continuous Calc
+sdoval 12 1         // Auto Scale
+sdoval 13 0         // Forward
+sdoval 14 0         // Backward
+sdoval 15 4         // Closeness
+sdoval 16 0         // Path Orientation
+sdoval 17 1         // Mouse Tracking
+sdoval 18 1         // Thinned Points
+sdoval 19 0         // Axis (0-based)
+sdoval 20 1         // Double Click
+sdoval 21 0         // Arc length CAM distance increment 1
+sdoval 22 1072693248  // Arc length CAM distance increment 2
+sdoval 23 0         // Arc length CAM scale factor 1
+sdoval 24 1079574528  // Arc length CAM scale factor 2
+sdoval 25 10        // Arc length CAM maximum deviation
+sdoval 26 0         // Background Image
+sdoval 27 1
+sdoend

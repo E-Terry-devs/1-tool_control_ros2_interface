@@ -1,0 +1,260 @@
+/*********************************************************************
+** StateMachine Subfile
+**
+** This file is included inside the main state machine and
+** contains the complete state "CheckConfiguration". This Check is
+** always done after each reboot.
+**
+*********************************************************************/
+
+/*********************************************************************
+** State Machine Functions Deklaration
+*********************************************************************/
+void setConfiguration_1();
+void setConfiguration_2();
+void setConfiguration_3();
+void setConfiguration_4();
+
+/*********************************************************************
+** State Definitions
+*********************************************************************/
+
+SmState CheckConfiguration
+	{
+		SIG_INIT	=
+		{
+			CheckMinimumLogicVoltage();
+		}
+
+		SIG_ENTRY 	=
+		{
+			print("SM: Configuration - Entry");
+			USER_PARAM(USR_MONITOR_DSP_STATUS)	= DSP_CHECK_CONFIG;
+			gConfigTyp = 0;
+		}
+
+		SIG_IDLE	=
+		{
+			if (HALL_TRAV_1_2_CONFIG_FOLD_MIN <= AI_CNF_FRAME_TRAV_1 && AI_CNF_FRAME_TRAV_1 <= HALL_TRAV_1_2_CONFIG_FOLD_MAX && HALL_TRAV_1_3_CONFIG_FOLD_MIN <= AI_CNF_FRAME_TRAV_3 && AI_CNF_FRAME_TRAV_3 <= HALL_TRAV_1_3_CONFIG_FOLD_MAX)
+			{
+			gConfigTyp = MECH_CONFIG_FOLD;
+			gFoldingActive=1;
+			return(SmTrans(VehicleEnable));
+			}
+			else if (HALL_TRAV_1_2_CONFIG_1_MIN <= AI_CNF_FRAME_TRAV_1 && AI_CNF_FRAME_TRAV_1 <= HALL_TRAV_1_2_CONFIG_1_MAX && HALL_TRAV_1_3_CONFIG_1_MIN <= AI_CNF_FRAME_TRAV_3 && AI_CNF_FRAME_TRAV_3 <= HALL_TRAV_1_3_CONFIG_1_MAX && gConfigTyp != MECH_CONFIG_FOLD)
+			{
+				gConfigTyp = MECH_CONFIG_1;
+				setConfiguration_1();
+			}
+
+			else if (HALL_TRAV_1_2_CONFIG_2_MIN <= AI_CNF_FRAME_TRAV_1 && AI_CNF_FRAME_TRAV_1 <= HALL_TRAV_1_2_CONFIG_2_MAX && HALL_TRAV_1_3_CONFIG_2_MIN <= AI_CNF_FRAME_TRAV_3 && AI_CNF_FRAME_TRAV_3 <= HALL_TRAV_1_3_CONFIG_2_MAX && gConfigTyp != MECH_CONFIG_FOLD)
+			{
+				gConfigTyp = MECH_CONFIG_2;
+				setConfiguration_2();
+			}
+
+			else if (HALL_TRAV_1_2_CONFIG_3_MIN <= AI_CNF_FRAME_TRAV_1 && AI_CNF_FRAME_TRAV_1 <= HALL_TRAV_1_2_CONFIG_3_MAX && HALL_TRAV_1_3_CONFIG_3_MIN <= AI_CNF_FRAME_TRAV_3 && AI_CNF_FRAME_TRAV_3 <= HALL_TRAV_1_3_CONFIG_3_MAX && gConfigTyp != MECH_CONFIG_FOLD)
+			{
+				gConfigTyp = MECH_CONFIG_3;
+				setConfiguration_3();
+			}
+
+			else if (HALL_TRAV_1_2_CONFIG_4_MIN <= AI_CNF_FRAME_TRAV_1 && AI_CNF_FRAME_TRAV_1 <= HALL_TRAV_1_2_CONFIG_4_MAX && HALL_TRAV_1_3_CONFIG_4_MIN <= AI_CNF_FRAME_TRAV_3 && AI_CNF_FRAME_TRAV_3 <= HALL_TRAV_1_3_CONFIG_4_MAX && gConfigTyp != MECH_CONFIG_FOLD)
+			{
+				gConfigTyp = MECH_CONFIG_4;
+				setConfiguration_4();
+			}
+			else {gConfigTyp = MECH_CONFIG_0;}
+
+			if(	gConfigTyp != MECH_CONFIG_0 && gConfigTyp != MECH_CONFIG_FOLD)
+			{
+				print("Configuration number: ", gConfigTyp);
+				AchermannSteering_Init();
+				return(SmTrans(VehicleEnable));
+			}
+			else
+			{
+				print("Error: Invalid configuration of the shaft");
+				print("Config Sensor 1: ", AI_CNF_FRAME_TRAV_1," Config Sensor 2: ", AI_CNF_FRAME_TRAV_3);
+				sprint(printArray,"Error: Invalid configuration of the shaft"," Hardware Time: ", Time(), " ms");
+				sprint(printArray,"Config Sensor 1: ", AI_CNF_FRAME_TRAV_1," Config Sensor 2: ", AI_CNF_FRAME_TRAV_3," Hardware Time: ", Time(), " ms");
+				Delay(500);
+				return(SmTrans(<-*->MotorsOff));
+			}
+		}
+	}// CheckConfiguration
+
+
+/*********************************************************************
+** State Machine Functions
+*********************************************************************/
+
+void setConfiguration_1()
+{
+	// Set actual variables for configuration settings
+ 	gConfAlpha_1_3				= MECH_CONFIG_1_ALPHA_1_3;
+ 	gConfRotCentrAct[0]			= MECH_CONF_1_ROT_CENTR_ACT_1;
+ 	gConfRotCentrAct[1]			= MECH_CONF_1_ROT_CENTR_ACT_2;
+ 	gConfRotCentrAct[2]			= MECH_CONF_1_ROT_CENTR_ACT_3;
+ 	gConfRotWheelAng_1_3[0]		= MECH_CONF_1_ROT_WHEEL_1_3_ACT_1;
+ 	gConfRotWheelAng_1_3[1]		= MECH_CONF_1_ROT_WHEEL_1_3_ACT_2;
+ 	gConfRotWheelAng_1_3[2]		= MECH_CONF_1_ROT_WHEEL_1_3_ACT_3;
+ 	gConfRotWheelAng_1[0]		= MECH_CONF_1_ROT_WHEEL_1_ACT_1;
+ 	gConfRotWheelAng_1[1]		= MECH_CONF_1_ROT_WHEEL_1_ACT_2;
+ 	gConfRotWheelAng_1[2]		= MECH_CONF_1_ROT_WHEEL_1_ACT_3;
+ 	gConfRotWheelAng_2[0]		= MECH_CONF_1_ROT_WHEEL_2_ACT_1;
+ 	gConfRotWheelAng_2[1]		= MECH_CONF_1_ROT_WHEEL_2_ACT_2;
+ 	gConfRotWheelAng_2[2]		= MECH_CONF_1_ROT_WHEEL_2_ACT_3;
+ 	gConfRotWheelAng_3[0]		= MECH_CONF_1_ROT_WHEEL_3_ACT_1;
+ 	gConfRotWheelAng_3[1]		= MECH_CONF_1_ROT_WHEEL_3_ACT_2;
+ 	gConfRotWheelAng_3[2]		= MECH_CONF_1_ROT_WHEEL_3_ACT_3;
+
+ 	gConfRotWheelVelF_1_3[0]	= MECH_CONF_1_ROT_WHEEL_1_3_VELF_ACT_1;
+ 	gConfRotWheelVelF_1_3[1]	= MECH_CONF_1_ROT_WHEEL_1_3_VELF_ACT_2;
+ 	gConfRotWheelVelF_1_3[2]	= MECH_CONF_1_ROT_WHEEL_1_3_VELF_ACT_3;
+  	gConfRotWheelVelF_1[0]		= MECH_CONF_1_ROT_WHEEL_1_VELF_ACT_1;
+ 	gConfRotWheelVelF_1[1]		= MECH_CONF_1_ROT_WHEEL_1_VELF_ACT_2;
+ 	gConfRotWheelVelF_1[2]		= MECH_CONF_1_ROT_WHEEL_1_VELF_ACT_3;
+  	gConfRotWheelVelF_2[0]		= MECH_CONF_1_ROT_WHEEL_2_VELF_ACT_1;
+ 	gConfRotWheelVelF_2[1]		= MECH_CONF_1_ROT_WHEEL_2_VELF_ACT_2;
+ 	gConfRotWheelVelF_2[2]		= MECH_CONF_1_ROT_WHEEL_2_VELF_ACT_3;
+  	gConfRotWheelVelF_3[0]		= MECH_CONF_1_ROT_WHEEL_3_VELF_ACT_1;
+ 	gConfRotWheelVelF_3[1]		= MECH_CONF_1_ROT_WHEEL_3_VELF_ACT_2;
+ 	gConfRotWheelVelF_3[2]		= MECH_CONF_1_ROT_WHEEL_3_VELF_ACT_3;
+
+ 	gConfRotWheelPathL[0]		= MECH_CONF_1_PATH_ROT_WHEEL_1_3;
+ 	gConfRotWheelPathL[1]		= MECH_CONF_1_PATH_ROT_WHEEL_1;
+ 	gConfRotWheelPathL[2]		= MECH_CONF_1_PATH_ROT_WHEEL_2;
+ 	gConfRotWheelPathL[3]		= MECH_CONF_1_PATH_ROT_WHEEL_3;
+
+ 	gConfRotWheelBoostF 		= MECH_CONF_1_ROT_WHEEL_BOOST_F;
+ 	gConfRotCentrBoostF			= MECH_CONF_1_ROT_CENTR_BOOST_F;
+}
+
+void setConfiguration_2()
+{
+	// Set actual variables for configuration settings
+ 	gConfAlpha_1_3				= MECH_CONFIG_2_ALPHA_1_3;
+ 	gConfRotCentrAct[0]			= MECH_CONF_2_ROT_CENTR_ACT_1;
+ 	gConfRotCentrAct[1]			= MECH_CONF_2_ROT_CENTR_ACT_2;
+ 	gConfRotCentrAct[2]			= MECH_CONF_2_ROT_CENTR_ACT_3;
+ 	gConfRotWheelAng_1_3[0]		= MECH_CONF_2_ROT_WHEEL_1_3_ACT_1;
+ 	gConfRotWheelAng_1_3[1]		= MECH_CONF_2_ROT_WHEEL_1_3_ACT_2;
+ 	gConfRotWheelAng_1_3[2]		= MECH_CONF_2_ROT_WHEEL_1_3_ACT_3;
+ 	gConfRotWheelAng_1[0]		= MECH_CONF_2_ROT_WHEEL_1_ACT_1;
+ 	gConfRotWheelAng_1[1]		= MECH_CONF_2_ROT_WHEEL_1_ACT_2;
+ 	gConfRotWheelAng_1[2]		= MECH_CONF_2_ROT_WHEEL_1_ACT_3;
+ 	gConfRotWheelAng_2[0]		= MECH_CONF_2_ROT_WHEEL_2_ACT_1;
+ 	gConfRotWheelAng_2[1]		= MECH_CONF_2_ROT_WHEEL_2_ACT_2;
+ 	gConfRotWheelAng_2[2]		= MECH_CONF_2_ROT_WHEEL_2_ACT_3;
+ 	gConfRotWheelAng_3[0]		= MECH_CONF_2_ROT_WHEEL_3_ACT_1;
+ 	gConfRotWheelAng_3[1]		= MECH_CONF_2_ROT_WHEEL_3_ACT_2;
+ 	gConfRotWheelAng_3[2]		= MECH_CONF_2_ROT_WHEEL_3_ACT_3;
+
+ 	gConfRotWheelVelF_1_3[0]	= MECH_CONF_2_ROT_WHEEL_1_3_VELF_ACT_1;
+ 	gConfRotWheelVelF_1_3[1]	= MECH_CONF_2_ROT_WHEEL_1_3_VELF_ACT_2;
+ 	gConfRotWheelVelF_1_3[2]	= MECH_CONF_2_ROT_WHEEL_1_3_VELF_ACT_3;
+  	gConfRotWheelVelF_1[0]		= MECH_CONF_2_ROT_WHEEL_1_VELF_ACT_1;
+ 	gConfRotWheelVelF_1[1]		= MECH_CONF_2_ROT_WHEEL_1_VELF_ACT_2;
+ 	gConfRotWheelVelF_1[2]		= MECH_CONF_2_ROT_WHEEL_1_VELF_ACT_3;
+  	gConfRotWheelVelF_2[0]		= MECH_CONF_2_ROT_WHEEL_2_VELF_ACT_1;
+ 	gConfRotWheelVelF_2[1]		= MECH_CONF_2_ROT_WHEEL_2_VELF_ACT_2;
+ 	gConfRotWheelVelF_2[2]		= MECH_CONF_2_ROT_WHEEL_2_VELF_ACT_3;
+  	gConfRotWheelVelF_3[0]		= MECH_CONF_2_ROT_WHEEL_3_VELF_ACT_1;
+ 	gConfRotWheelVelF_3[1]		= MECH_CONF_2_ROT_WHEEL_3_VELF_ACT_2;
+ 	gConfRotWheelVelF_3[2]		= MECH_CONF_2_ROT_WHEEL_3_VELF_ACT_3;
+
+ 	gConfRotWheelPathL[0]		= MECH_CONF_2_PATH_ROT_WHEEL_1_3;
+ 	gConfRotWheelPathL[1]		= MECH_CONF_2_PATH_ROT_WHEEL_1;
+ 	gConfRotWheelPathL[2]		= MECH_CONF_2_PATH_ROT_WHEEL_2;
+ 	gConfRotWheelPathL[3]		= MECH_CONF_2_PATH_ROT_WHEEL_3;
+
+ 	gConfRotWheelBoostF 		= MECH_CONF_2_ROT_WHEEL_BOOST_F;
+ 	gConfRotCentrBoostF			= MECH_CONF_2_ROT_CENTR_BOOST_F;
+}
+
+void setConfiguration_3()
+{
+	// Set actual variables for configuration settings
+ 	gConfAlpha_1_3				= MECH_CONFIG_3_ALPHA_1_3;
+ 	gConfRotCentrAct[0]			= MECH_CONF_3_ROT_CENTR_ACT_1;
+ 	gConfRotCentrAct[1]			= MECH_CONF_3_ROT_CENTR_ACT_2;
+ 	gConfRotCentrAct[2]			= MECH_CONF_3_ROT_CENTR_ACT_3;
+ 	gConfRotWheelAng_1_3[0]		= MECH_CONF_3_ROT_WHEEL_1_3_ACT_1;
+ 	gConfRotWheelAng_1_3[1]		= MECH_CONF_3_ROT_WHEEL_1_3_ACT_2;
+ 	gConfRotWheelAng_1_3[2]		= MECH_CONF_3_ROT_WHEEL_1_3_ACT_3;
+ 	gConfRotWheelAng_1[0]		= MECH_CONF_3_ROT_WHEEL_1_ACT_1;
+ 	gConfRotWheelAng_1[1]		= MECH_CONF_3_ROT_WHEEL_1_ACT_2;
+ 	gConfRotWheelAng_1[2]		= MECH_CONF_3_ROT_WHEEL_1_ACT_3;
+ 	gConfRotWheelAng_2[0]		= MECH_CONF_3_ROT_WHEEL_2_ACT_1;
+ 	gConfRotWheelAng_2[1]		= MECH_CONF_3_ROT_WHEEL_2_ACT_2;
+ 	gConfRotWheelAng_2[2]		= MECH_CONF_3_ROT_WHEEL_2_ACT_3;
+ 	gConfRotWheelAng_3[0]		= MECH_CONF_3_ROT_WHEEL_3_ACT_1;
+ 	gConfRotWheelAng_3[1]		= MECH_CONF_3_ROT_WHEEL_3_ACT_2;
+ 	gConfRotWheelAng_3[2]		= MECH_CONF_3_ROT_WHEEL_3_ACT_3;
+
+ 	gConfRotWheelVelF_1_3[0]	= MECH_CONF_3_ROT_WHEEL_1_3_VELF_ACT_1;
+ 	gConfRotWheelVelF_1_3[1]	= MECH_CONF_3_ROT_WHEEL_1_3_VELF_ACT_2;
+ 	gConfRotWheelVelF_1_3[2]	= MECH_CONF_3_ROT_WHEEL_1_3_VELF_ACT_3;
+  	gConfRotWheelVelF_1[0]		= MECH_CONF_3_ROT_WHEEL_1_VELF_ACT_1;
+ 	gConfRotWheelVelF_1[1]		= MECH_CONF_3_ROT_WHEEL_1_VELF_ACT_2;
+ 	gConfRotWheelVelF_1[2]		= MECH_CONF_3_ROT_WHEEL_1_VELF_ACT_3;
+  	gConfRotWheelVelF_2[0]		= MECH_CONF_3_ROT_WHEEL_2_VELF_ACT_1;
+ 	gConfRotWheelVelF_2[1]		= MECH_CONF_3_ROT_WHEEL_2_VELF_ACT_2;
+ 	gConfRotWheelVelF_2[2]		= MECH_CONF_3_ROT_WHEEL_2_VELF_ACT_3;
+  	gConfRotWheelVelF_3[0]		= MECH_CONF_3_ROT_WHEEL_3_VELF_ACT_1;
+ 	gConfRotWheelVelF_3[1]		= MECH_CONF_3_ROT_WHEEL_3_VELF_ACT_2;
+ 	gConfRotWheelVelF_3[2]		= MECH_CONF_3_ROT_WHEEL_3_VELF_ACT_3;
+
+ 	gConfRotWheelPathL[0]		= MECH_CONF_3_PATH_ROT_WHEEL_1_3;
+ 	gConfRotWheelPathL[1]		= MECH_CONF_3_PATH_ROT_WHEEL_1;
+ 	gConfRotWheelPathL[2]		= MECH_CONF_3_PATH_ROT_WHEEL_2;
+ 	gConfRotWheelPathL[3]		= MECH_CONF_3_PATH_ROT_WHEEL_3;
+
+ 	gConfRotWheelBoostF 		= MECH_CONF_3_ROT_WHEEL_BOOST_F;
+ 	gConfRotCentrBoostF			= MECH_CONF_3_ROT_CENTR_BOOST_F;	
+
+}
+
+void setConfiguration_4()
+{
+	// Set actual variables for configuration settings
+ 	gConfAlpha_1_3				= MECH_CONFIG_4_ALPHA_1_3;
+ 	gConfRotCentrAct[0]			= MECH_CONF_4_ROT_CENTR_ACT_1;
+ 	gConfRotCentrAct[1]			= MECH_CONF_4_ROT_CENTR_ACT_2;
+ 	gConfRotCentrAct[2]			= MECH_CONF_4_ROT_CENTR_ACT_3;
+ 	gConfRotWheelAng_1_3[0]		= MECH_CONF_4_ROT_WHEEL_1_3_ACT_1;
+ 	gConfRotWheelAng_1_3[1]		= MECH_CONF_4_ROT_WHEEL_1_3_ACT_2;
+ 	gConfRotWheelAng_1_3[2]		= MECH_CONF_4_ROT_WHEEL_1_3_ACT_3;
+ 	gConfRotWheelAng_1[0]		= MECH_CONF_4_ROT_WHEEL_1_ACT_1;
+ 	gConfRotWheelAng_1[1]		= MECH_CONF_4_ROT_WHEEL_1_ACT_2;
+ 	gConfRotWheelAng_1[2]		= MECH_CONF_4_ROT_WHEEL_1_ACT_3;
+ 	gConfRotWheelAng_2[0]		= MECH_CONF_4_ROT_WHEEL_2_ACT_1;
+ 	gConfRotWheelAng_2[1]		= MECH_CONF_4_ROT_WHEEL_2_ACT_2;
+ 	gConfRotWheelAng_2[2]		= MECH_CONF_4_ROT_WHEEL_2_ACT_3;
+ 	gConfRotWheelAng_3[0]		= MECH_CONF_4_ROT_WHEEL_3_ACT_1;
+ 	gConfRotWheelAng_3[1]		= MECH_CONF_4_ROT_WHEEL_3_ACT_2;
+ 	gConfRotWheelAng_3[2]		= MECH_CONF_4_ROT_WHEEL_3_ACT_3;
+
+ 	gConfRotWheelVelF_1_3[0]	= MECH_CONF_4_ROT_WHEEL_1_3_VELF_ACT_1;
+ 	gConfRotWheelVelF_1_3[1]	= MECH_CONF_4_ROT_WHEEL_1_3_VELF_ACT_2;
+ 	gConfRotWheelVelF_1_3[2]	= MECH_CONF_4_ROT_WHEEL_1_3_VELF_ACT_3;
+  	gConfRotWheelVelF_1[0]		= MECH_CONF_4_ROT_WHEEL_1_VELF_ACT_1;
+ 	gConfRotWheelVelF_1[1]		= MECH_CONF_4_ROT_WHEEL_1_VELF_ACT_2;
+ 	gConfRotWheelVelF_1[2]		= MECH_CONF_4_ROT_WHEEL_1_VELF_ACT_3;
+  	gConfRotWheelVelF_2[0]		= MECH_CONF_4_ROT_WHEEL_2_VELF_ACT_1;
+ 	gConfRotWheelVelF_2[1]		= MECH_CONF_4_ROT_WHEEL_2_VELF_ACT_2;
+ 	gConfRotWheelVelF_2[2]		= MECH_CONF_4_ROT_WHEEL_2_VELF_ACT_3;
+  	gConfRotWheelVelF_3[0]		= MECH_CONF_4_ROT_WHEEL_3_VELF_ACT_1;
+ 	gConfRotWheelVelF_3[1]		= MECH_CONF_4_ROT_WHEEL_3_VELF_ACT_2;
+ 	gConfRotWheelVelF_3[2]		= MECH_CONF_4_ROT_WHEEL_3_VELF_ACT_3;
+
+ 	gConfRotWheelPathL[0]		= MECH_CONF_4_PATH_ROT_WHEEL_1_3;
+ 	gConfRotWheelPathL[1]		= MECH_CONF_4_PATH_ROT_WHEEL_1;
+ 	gConfRotWheelPathL[2]		= MECH_CONF_4_PATH_ROT_WHEEL_2;
+ 	gConfRotWheelPathL[3]		= MECH_CONF_4_PATH_ROT_WHEEL_3;
+
+ 	gConfRotWheelBoostF 		= MECH_CONF_4_ROT_WHEEL_BOOST_F;
+ 	gConfRotCentrBoostF			= MECH_CONF_4_ROT_CENTR_BOOST_F;
+
+}

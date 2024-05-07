@@ -1,0 +1,359 @@
+/*********************************************************************
+**
+**               CanOpen Operational Mode: Position
+**               ----------------------------------
+*/
+
+
+void StartMovement(long id, long data[]);   ///  !!!!!!!!!!!?????????????
+
+SmState DriveModePosition
+    {
+    SIG_INIT            = DriveModePosition_Init;
+    SIG_IDLE            = DriveModePosition_Idle;
+	SIG_HALT            = SmTrans(->Halt->HaltStanding);
+    SmState Halt
+        {
+        SIG_ENTRY           = PositionHalt_Entry;
+
+        SmState HaltStanding
+            {
+            SIG_NOHALT      = SmTrans(<-*->WaitSetPoint);
+            }
+        SmState HaltMoving
+            {
+            SIG_NOHALT      = {
+                                return(SmTrans(<-*->Positionning->ReadyForRestart));
+                              }
+            }
+        }
+
+    SmState WaitSetPoint
+        {
+        SIG_ENTRY           = PositionWaitSetPoint_Entry;
+        SIG_IDLE            = PositionStanding_Idle;
+        SIG_NEWSETPOINT     = { StartMovement(id,data);
+                                return(SmTrans(Positionning->Started));
+                              }
+        SIG_NEWSETPOINT_LOW = { data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 0; }
+        }
+
+    SmState Positionning
+        {
+        SIG_IDLE            = PositionActive_Idle;
+        SmState Started
+            {
+            SIG_ENTRY                = { data[DATA_State]  = STATE_M_POSITION_STARTED; }
+            SIG_NEWSETPOINT_LOW      = SmTrans(ReadyForRestart);
+            }
+        SmState ReadyForRestart
+            {
+            SIG_ENTRY                = { data[DATA_State]  = STATE_M_POSITION_READYRST; }
+            SIG_TARGETREACHED        = SmTrans(<-*->WaitSetPoint);
+            SIG_NEWSETPOINT          = { if(data[DATA_OldCommand] & ZBCOS_CMDM_PP_CHGIMM) {
+                                            // single set point mode -> means we execute the next command immediately
+                                            StartMovement(id,data);
+                                            return(SmTrans(Started));
+                                          } else {
+                                            if(ZBCO_POSITIONOPTCODE(id) & ZBCOS_POSOPT_CI_CONTINUE_TARGET) {
+                                                // .. set ON CPOS for old target
+                                                // .. change target  ??????
+                                                // start position commmand
+                                                StartMovement(id,data);
+                                                return(SmTrans(WaitingForTargetPos));
+                                             } else {
+                                                return(SmTrans(NewSetpointWaiting));
+                                             }
+                                          }
+                                       }
+            }
+        SmState WaitingForTargetPos
+            {
+            SIG_ENTRY                = { data[DATA_State]  = STATE_M_POSITION_WAITTARGET; }
+            SIG_IDLE                 = { if (data[DATA_SlaveTargetPos] - (Cpos(id)*data[DATA_PosDirection] < 1)) {
+                                            StartMovement(id,data);
+                                            return(SmTrans(Started));
+                                         }
+                                         return(SmNotHandled);
+                                       }
+            }
+        SmState NewSetpointWaiting
+            {
+            SIG_ENTRY                = { data[DATA_State]  = STATE_M_POSITION_SPWAITING; }
+            SIG_TARGETREACHED        = SmTrans(<-<-->WaitSetPoint);
+            }
+        }
+    }
+
+/*********************************************************************
+**
+**               DriveModePosition State Functions
+**               ---------------------------------
+*/
+
+long DriveModePosition_Init(long id, long signal, long event[], long data[])
+{
+    print("Axis ",id,": Enter state OperationEnabled - PositionMode");
+    if(ZBCO_CONTROLWORD(id) & ZBCOS_CMDM_OP_HALT) {
+        return(SmTrans(->Halt->HaltStanding));
+    } else {
+        return(SmTrans(->WaitSetPoint));
+    }
+}
+
+long DriveModePosition_Idle(long id, long signal, long event[], long data[])
+{
+    /*
+    ** Check for changes in HALT bit of command word and fire signals if necessary
+    */
+
+    if(data[DATA_PosCmdEdges] & ZBCOS_CMDM_OP_HALT) {
+        SmPost(id, SIG_HALT);
+    }
+    if(data[DATA_NegCmdEdges] & ZBCOS_CMDM_OP_HALT) {
+        SmPost(id, SIG_NOHALT);
+    }
+
+    if(data[DATA_PosCmdEdges] & ZBCOS_CMDM_PP_NEWSETP) {
+        SmPost(id, SIG_NEWSETPOINT);
+    }
+
+    if(data[DATA_NegCmdEdges] & ZBCOS_CMDM_PP_NEWSETP) {
+        SmPost(id, SIG_NEWSETPOINT_LOW);
+    }
+
+    /*
+    ** It is important that we do NOT "handle" the Idle event here.  This allows
+    ** the Idle event to be passed up the superstate chain so that all the normal
+    ** Idle processing gets a chance to run.
+    */
+    return(SmNotHandled);
+}
+
+long PositionHalt_Entry(long id, long signal, long event[], long data[])
+{
+    print("Axis ",id,": Enter state OperationEnabled - PosModeHalt");
+
+    /*
+    ** Always halt the motor when we enter the Halt state.
+    */
+    data[DATA_State]  = STATE_M_POSITION_HALT;
+
+    Dec(id, ZBCO_INTERNALDEC(id));
+    AxisStop(id);
+
+    return(SmHandled);
+}
+
+long PositionStanding_Idle(long id, long signal, long event[], long data[])
+{
+    if (data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_P_POSITION) {
+        check_targetposition(id, data);
+    }
+
+    /*
+    ** It is important that we do NOT "handle" the Idle event here.  This allows
+    ** the Idle event to be passed up the superstate chain so that all the normal
+    ** Idle processing gets a chance to run.
+    */
+    return(SmNotHandled);
+}
+
+
+long PositionActive_Idle(long id, long signal, long event[], long data[])
+{
+    long reached;
+
+    if (1) {  //if ((Axend(id)) & 1) {    /// AXEND !!!!!!!???????????????
+        reached = 1;
+        if (data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_POSITION || data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_P_POSITION) {
+            reached = check_targetposition(id, data);
+        }
+        if(reached) {
+            data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = 1;
+            data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 0;
+            if (ZBCO_POSITIONOPTCODE(id) & ZBCOS_POSOPT_POSRESPONSE_AUTO_TARGET) {
+                // we should release newsetp bit automatically
+                ZBCO_CONTROLWORD(id).i5 = 0; // bit 5 will be reset
+                //!!! ??? counters ??
+            }
+            ZbcosG_MultiAxesActiveCount = 0; // it does not make sense to continue with lin commands
+            SmPost(id, SIG_TARGETREACHED);
+        }
+    else
+        if (data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_P_POSITION) {
+            check_targetposition(id, data);
+        }
+    }
+
+    /*
+    ** It is important that we do NOT "handle" the Idle event here.  This allows
+    ** the Idle event to be passed up the superstate chain so that all the normal
+    ** Idle processing gets a chance to run.
+    */
+    return(SmNotHandled);
+}
+
+long PositionWaitSetPoint_Entry(long id, long signal, long event[], long data[])
+{
+    print("Axis ",id,": Enter state OperationEnabled - PositionModeWaitStart");
+
+    data[DATA_SlaveTargetPos] = Cpos(id);    // Actual slave position is target position.
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 0;    // set point ack to zero again
+    data[DATA_State]  = STATE_M_POSITION_WAITSP;
+
+    return(SmHandled);
+}
+
+
+void StartMovement(long id, long data[])
+{
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12]   = 1;    // set point acknowledge
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT13]   = 0;    // following error
+    data[DATA_StatusWord].i[ZBCOS_STW_TARGET_BIT] = 0;    // target reached
+    Vel(id, ZBCO_INTERNALVEL(id));
+    Acc(id, ZBCO_INTERNALACC(id));
+    Dec(id, ZBCO_INTERNALDEC(id));
+    if (data[DATA_OldCommand] & ZBCOS_CMDM_PP_RELATIV) {
+        if(ZBCO_POSITIONOPTCODE(id) & ZBCOS_POSOPT_POSRELATIVE_CPOS) {
+            if ( (data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_POSITION) || (data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_P_POSITION) ) {
+                data[DATA_SlaveTargetPos] = (Mapos(id) + ZBCO_TARGETPOS(id));
+            } else {
+                data[DATA_SlaveTargetPos] = (Cpos(id) + ZBCO_TARGETPOS(id));
+            }
+        } else {
+            if (ZBCO_POSITIONOPTCODE(id) & ZBCOS_POSOPT_POSRELATIVE_APOS) {
+                if ( (data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_POSITION) || (data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_P_POSITION) ) {
+                    data[DATA_SlaveTargetPos] = (Mapos(id) + ZBCO_TARGETPOS(id));
+                } else {
+                    data[DATA_SlaveTargetPos] = (Apos(id) + ZBCO_TARGETPOS(id));
+                }
+            } else {
+                data[DATA_SlaveTargetPos] = (data[DATA_SlaveTargetPos] + ZBCO_TARGETPOS(id));
+            }
+        }
+    } else {
+        data[DATA_SlaveTargetPos] = ZBCO_TARGETPOS(id);
+    }
+    if ( (data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_POSITION) || (data[DATA_OldOpMode] == ZBCOS_MODOP_MASTER_P_POSITION) ) {
+        SYS_PFG_MASTERTARGET(id)  = data[DATA_SlaveTargetPos];  // set master target position
+        data[DATA_SlaveTargetPos] = SYS_PFG_MASTERTARGET(id);   // read real slave position
+    }
+    if(data[DATA_SlaveTargetPos] - (Cpos(id) >= 0) ) {
+        data[DATA_PosDirection] = 1;
+    } else {
+        data[DATA_PosDirection] = -1;
+    }
+    if ( (Sysvar[ZBCOS_CUI_MULTI_AX_BASE + id] != 0) && (Sysvar[ZBCOS_CUI_MULTI_AX_BASE + id] <= ZBCOS_CNF_MAX_AXES) ) {
+        zbcos_start_linmove(id, data);
+    } else {
+        AxisPosAbsStart(id, data[DATA_SlaveTargetPos]);
+    }
+    if (ZBCO_POSITIONOPTCODE(id) & ZBCOS_POSOPT_POSRESPONSE_AUTO_READY) {
+        // we should release newsetp bit automatically
+        ZBCO_CONTROLWORD(id).i5 = 0; // bit 5 will be reset (new setpoint bit)
+        //!!!!! geht so nicht, müsste in newcmd, sonst wird flanke nicht erkannt    Tbd
+        data[DATA_OldCommand] = data[DATA_OldCommand] & ~ZBCOS_CMDM_PP_NEWSETP;  // we also have to do that in case of applications with counter check
+    }
+}
+
+
+/***************************/
+void zbcos_reset_multiaxcommand()
+{
+    ZbcosG_MultiAxesCommandCount = 0;
+    ZbcosG_MultiAxesActiveCount = 0;
+    arraycpy(ZbcosG_MultiAxesPart, ZbcosG_NullArray);   /// ZbcosG_MultiAxesPart[] = ZbcosG_NullArray[];  // !!!!!!!???????
+    arraycpy(ZbcosG_MultiAxesNo, ZbcosG_NullArray); //ZbcosG_MultiAxesNo[]   = ZbcosG_NullArray[]; // !!!!!!!???????
+}
+
+/***************************/
+long zbcos_start_linmove(long id, long data[])
+{
+    print("zbcos_start_linmove axe ",id," muaxc ",ZbcosG_MultiAxesCommandCount);
+    if(ZbcosG_MultiAxesPart[id] == 0) {  // if axes was not already registered for the move
+        ZbcosG_MultiAxesCommandCount++;
+        ZbcosG_MultiAxesNo[ZbcosG_MultiAxesCommandCount] = id;
+        ZbcosG_MultiAxesPart[id] = 1;
+        ZbcosG_MultiAxesPos[ZbcosG_MultiAxesCommandCount] = data[DATA_SlaveTargetPos];
+    }
+    if (ZbcosG_MultiAxesCommandCount == Sysvar[ZBCOS_CUI_MULTI_AX_BASE + id]) {  // now we are complete
+        ZbcosG_MultiAxesActiveCount = ZbcosG_MultiAxesCommandCount;
+        ZbcosG_MultiAxesCommandCount = 0;
+        zbcos_restart_linmove(id, data);
+    }
+
+    return(0);
+}
+/***************************/
+long check_targetposition(long id, long data[])
+{
+    long targetpos;
+
+    targetpos = SYS_PFG_MASTERTARGET(id);           // should be initialised somewhere ????
+    if ( (abs(targetpos - data[DATA_SlaveTargetPos])) > (AXE_PARAM(id, TESTWIN)) ) {
+        data[DATA_SlaveTargetPos] = targetpos;
+        if( (ZbcosG_MultiAxesActiveCount != 0) && (Sysvar[ZBCOS_CUI_MULTI_AX_BASE + id] == ZbcosG_MultiAxesActiveCount) ){
+            zbcos_restart_linmove(id, data);
+        } else {
+            AxisPosAbsStart(id, targetpos);
+        }
+        return(0);
+    }
+
+    return(1);
+}
+/***************************/
+long zbcos_restart_linmove(long id, long data[])
+{
+    if (ZbcosG_MultiAxesActiveCount == Sysvar[ZBCOS_CUI_MULTI_AX_BASE + id]) {
+        switch (ZbcosG_MultiAxesActiveCount) {
+       		#if ZBCOS_CNF_MAX_AXES >1
+            	case 0 :  break;  // we are done
+            #endif
+            #if ZBCOS_CNF_MAX_AXES >=2
+				case 2 :  AxisLinAbsStart(ZbcosG_MultiAxesNo[0], ZbcosG_MultiAxesPos[01],
+										   ZbcosG_MultiAxesNo[1], ZbcosG_MultiAxesPos[1]);
+						  break;
+            #endif
+            #if ZBCOS_CNF_MAX_AXES >=3
+				case 3 :  AxisLinAbsStart(ZbcosG_MultiAxesNo[0], ZbcosG_MultiAxesPos[0],
+										   ZbcosG_MultiAxesNo[1], ZbcosG_MultiAxesPos[1],
+										   ZbcosG_MultiAxesNo[2], ZbcosG_MultiAxesPos[2]);
+						  break;
+            #endif
+            #if ZBCOS_CNF_MAX_AXES >=4
+				case 4 :  AxisLinAbsStart(ZbcosG_MultiAxesNo[0], ZbcosG_MultiAxesPos[0],
+										   ZbcosG_MultiAxesNo[1], ZbcosG_MultiAxesPos[1],
+										   ZbcosG_MultiAxesNo[2], ZbcosG_MultiAxesPos[2],
+										   ZbcosG_MultiAxesNo[3], ZbcosG_MultiAxesPos[3]);
+						  break;
+            #endif
+            #if ZBCOS_CNF_MAX_AXES >=5
+				case 5 :  AxisLinAbsStart(ZbcosG_MultiAxesNo[0], ZbcosG_MultiAxesPos[0],
+										   ZbcosG_MultiAxesNo[1], ZbcosG_MultiAxesPos[1],
+										   ZbcosG_MultiAxesNo[2], ZbcosG_MultiAxesPos[2],
+										   ZbcosG_MultiAxesNo[3], ZbcosG_MultiAxesPos[3],
+										   ZbcosG_MultiAxesNo[4], ZbcosG_MultiAxesPos[4]);
+						  break;
+            #endif
+            #if ZBCOS_CNF_MAX_AXES >=6
+				case 6 :  AxisLinAbsStart(ZbcosG_MultiAxesNo[0], ZbcosG_MultiAxesPos[0],
+										   ZbcosG_MultiAxesNo[1], ZbcosG_MultiAxesPos[1],
+										   ZbcosG_MultiAxesNo[2], ZbcosG_MultiAxesPos[2],
+										   ZbcosG_MultiAxesNo[3], ZbcosG_MultiAxesPos[3],
+										   ZbcosG_MultiAxesNo[4], ZbcosG_MultiAxesPos[4],
+										   ZbcosG_MultiAxesNo[5], ZbcosG_MultiAxesPos[5]);
+						  break;
+            #endif
+            default:  print("error in zbcos_restart_linmove, ZbcosG_MultiAxesActiveCount  = ",ZbcosG_MultiAxesActiveCount);
+        }
+        print("lina restarted ",ZbcosG_MultiAxesActiveCount);
+    } else {
+        print(" lin not started ",Sysvar[ZBCOS_CUI_MULTI_AX_BASE + id]);
+        if (Sysvar[ZBCOS_CUI_MULTI_AX_BASE + id] > ZBCOS_CNF_MAX_AXES) {
+            print("Application Error or wrong DLL version - MultiAxe no = ",Sysvar[ZBCOS_CUI_MULTI_AX_BASE + id]);
+        }
+    }
+    return(0);
+}

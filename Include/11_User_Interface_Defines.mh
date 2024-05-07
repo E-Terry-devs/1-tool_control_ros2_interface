@@ -1,0 +1,122 @@
+/*********************************************************************
+** User Interface Defines
+**
+** Contains all user parameter definitions. The user parameters are
+** used as monitor interface, as user error and for general settings.
+**
+** Attention: The user parameters are stored on the flash when using
+** the USB feature.
+**
+*********************************************************************/
+
+/*********************************************************************
+** User Parameter - Monitor Interface
+*********************************************************************/
+#define USER_FACTOR_SCALE 	100
+#define USER_BOOST_INC		1000
+#define USER_STEERING_INC	1000
+
+// User command to do a simulation witout an RC remote control an emmulate the sensor
+#define USER_MONITOR_COMMAND     		1
+	#define CMD_IDLE						0
+	#define CMD_MOTOFF						1
+	#define CMD_VEHICLE_ENB					2
+	#define CMD_HOMING						3
+	#define CMD_STOP						4
+	#define CMD_CHANGEVEL					5
+	#define CMD_SAVEVEL						6
+
+	#define CMD_JOYSTICK_BOOST_UP     		10		// RC remote control -> Simulation with Zub Monitor
+	#define CMD_JOYSTICK_BOOST_DOWN     	11		// RC remote control -> Simulation with Zub Monitor
+	#define CMD_JOYSTICK_STEERING_LEFT 		12		// RC remote control -> Simulation with Zub Monitor
+	#define CMD_JOYSTICK_STEERING_RIGHT  	13		// RC remote control -> Simulation with Zub Monitor
+
+#define USER_MONITOR_REMOTE				2
+	#define REMOTE_INVERT_MODE				0x01	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_ROT_CENTRALPOINT			0x02	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_SLOW_MODE				0x04	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_SET_CONST_SPEED			0x08	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_DATA_LOGGING				0x10	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_VEHICLE_ON				0x20	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_CURVE_DRIVE				0x40	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_SEMI_AUTO_ON				0x80	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_SEMI_AUTO_CURVE			0x100	// RC remote control -> Simulation with Zub Monitor
+
+	// Not used at the moment
+	#define REMOTE_EXTERNAL_INPUT			0x999	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_ERROR_RADIO				0x999	// RC remote control -> Simulation with Zub Monitor
+	#define REMOTE_SLEEPMODE				0x999	// RC remote control -> Simulation with Zub Monitor
+
+
+#define USER_MONITOR_SENSOR    			3
+	#define SENS_ZERO_ACT_DRIVE_1			0x01	// Sensor in steering x
+	#define SENS_ZERO_ACT_DRIVE_2			0x02	// Sensor in steering x
+	#define SENS_ZERO_ACT_DRIVE_3			0x04	// Sensor in steering x
+
+	#define SENS_CONFIGURATION_1			0x08	// Sensor in central frame
+	#define SENS_CONFIGURATION_2			0x10	// Sensor in central frame
+
+	#define SENS_MANUAL_EBOX_1				0x20	// Button on the vehicle
+	#define SENS_MANUAL_EBOX_2				0x40	// Button on the vehicle
+
+	#define SENS_MANUAL_TRAV_3_1			0x80	// Button on the vehicle
+	#define SENS_MANUAL_TRAV_3_2			0x100	// Button on the vehicle
+
+#define USR_MONITOR_DSP_STATUS			4
+	// Display State
+	#define DSP_MOTOFF      		1
+	#define DSP_VEHICLEON      		10
+	#define DSP_CHECK_CONFIG		20
+	#define DSP_HOMING      		22
+	#define DSP_HOMING_SEARCH   	24
+	#define DSP_HOMING_WAIT			26
+	#define DSP_HOMING_ZERO_MOVE	28
+	#define DSP_RUNNING  			30
+	#define DSP_STOP  				32
+	#define DSP_STRAIGHT_DRIVE  	34
+	#define DSP_CURVE_DRIVE  		36
+	#define DSP_ROTCENTER			38
+	#define DSP_ROTWHEEL_1  		40
+	#define DSP_ROTWHEEL_2  		42
+	#define DSP_ROTWHEEL_3  		44
+	#define DSP_ROTWHEEL_1_3  		45
+	#define DSP_CHANGE_MOVE			46
+	#define DSP_M_FORWARD  			60
+	#define DSP_M_BACKWARD 			62
+	#define DSP_M_FOLDDRIVE			64
+	#define DSP_TESTING				99
+
+
+/*********************************************************************
+** User Parameter - User Error List
+*********************************************************************/
+#define USER_ERROR_ID    				10
+//{
+	#define ERR_NO_ERROR					0
+	#define ERR_CONFIG_CHANGE_1				1					// State configuration sensor 1 change while running
+	#define ERR_CONFIG_CHANGE_2				2					// State configuration sensor 1 change while running
+	#define ERR_ACHERMANN_STEERING_CONFIG	3					// Invalid config to calculate the acermann steering
+	#define ERR_LOGICSUPPLY					4					// Minimum logic voltage undershot
+	//}
+
+
+/*********************************************************************
+** User Parameter - Settings
+*********************************************************************/
+// Parameter Settings
+#define USER_INIT_PARAM   				20
+#define USER_SETVELCONST   				21
+	#define USER_SETVELCONST_DEFAULT		1500
+#define USER_SETACC    					22
+#define USER_SETDEC    					23
+#define USER_SETJERK   					24
+
+/*********************************************************************
+** User Parameter - Values
+*********************************************************************/
+#define USR_MONITOR_ACH_PIVOT_X			50
+#define USR_MONITOR_ACH_PIVOT_Y			51
+#define USR_MONITOR_JOISTICK_BOOST		52
+#define USR_MONITOR_JOISTICK_STEERING	53
+#define USR_MONITOR_TANK_1_3			54
+#define USR_MONITOR_TANK_2				55

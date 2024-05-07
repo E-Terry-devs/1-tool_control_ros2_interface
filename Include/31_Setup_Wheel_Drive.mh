@@ -1,0 +1,84 @@
+/*********************************************************************
+** Include SDK
+*********************************************************************/
+#include "SDK\SDK_ApossC.mc"
+#include "motor\WD80_754962_48V.mh"
+
+void setupWheelDrive()
+{
+	long i;
+
+	#if SIMULATE_WHEEL_DRIVE_1
+		sdkSetupAxisSimulation(WHEEL_DRIVE_1);
+	#else
+
+	#endif
+	#if SIMULATE_WHEEL_DRIVE_2
+		sdkSetupAxisSimulation(WHEEL_DRIVE_2);
+	#else
+		setupWD80_754962_Inc(WHEEL_DRIVE_2,WHEEL_DRIVE_2,1);
+	#endif
+		#if SIMULATE_WHEEL_DRIVE_3
+		sdkSetupAxisSimulation(WHEEL_DRIVE_3);
+	#else
+
+	#endif
+
+	sdkSetupCurrentPIControl(WHEEL_DRIVE_2, WHEEL_DRIVE_CURKPROP,  WHEEL_DRIVE_CURKINT, WHEEL_DRIVE_CURKILIM);
+	sdkSetupVelocityPIControl(WHEEL_DRIVE_2, WHEEL_DRIVE_VELKPROP,  WHEEL_DRIVE_VELKINT, WHEEL_DRIVE_VELKILIM);
+	miniM6_SetupCurrentPIControl(MIM6_BUSID_TRAV_1, S_AX_WHEEL_DRVE, WHEEL_DRIVE_CURKPROP,  WHEEL_DRIVE_CURKINT, WHEEL_DRIVE_CURKILIM);
+	miniM6_SetupVelocityPIControl(MIM6_BUSID_TRAV_1, S_AX_WHEEL_DRVE, WHEEL_DRIVE_VELKPROP,  WHEEL_DRIVE_VELKINT, WHEEL_DRIVE_VELKILIM);
+	miniM6_SetupConstants(MIM6_BUSID_TRAV_1, S_AX_WHEEL_DRVE, WD80_754962_MAXCUR, WD80_754962_MAX_RPM);
+	miniM6_SetupCurrentPIControl(MIM6_BUSID_TRAV_3, S_AX_WHEEL_DRVE, WHEEL_DRIVE_CURKPROP,  WHEEL_DRIVE_CURKINT, WHEEL_DRIVE_CURKILIM);
+	miniM6_SetupVelocityPIControl(MIM6_BUSID_TRAV_3, S_AX_WHEEL_DRVE, WHEEL_DRIVE_VELKPROP,  WHEEL_DRIVE_VELKINT, WHEEL_DRIVE_VELKILIM);
+    miniM6_SetupConstants(MIM6_BUSID_TRAV_3, S_AX_WHEEL_DRVE, WD80_754962_MAXCUR, WD80_754962_MAX_RPM);
+
+	i= WHEEL_DRIVE_1;
+	while (1)
+	{
+		print("Setup Wheel Drive with Axis ", i);
+		// Movement parameters for the axis
+		sdkSetupAxisMovementParam(	i,
+									WHEEL_DRIVE_VELRES,
+									WHEEL_DRIVE_MAX_RPM,
+									WHEEL_DRIVE_RAMPTYPE,
+									WHEEL_DRIVE_RAMPMIN,
+									WHEEL_DRIVE_JERKMIN
+									);
+
+
+
+		// Definition of the user units
+		sdkSetupAxisUserUnits(		i,
+									WHEEL_DRIVE_POSENCREV,
+									WHEEL_DRIVE_POSENCQC,
+									WHEEL_DRIVE_POSFACT_Z,
+									WHEEL_DRIVE_POSFACT_N,
+									WHEEL_DRIVE_FEEDREV,
+									WHEEL_DRIVE_FEEDDIST
+									);
+
+		// Position control setup
+		sdkSetupPositionPIDControlExt( 	i,
+										WHEEL_DRIVE_KPROP,
+										WHEEL_DRIVE_KINT,
+										WHEEL_DRIVE_KDER,
+										WHEEL_DRIVE_KILIM,
+										WHEEL_DRIVE_KILIMTIME,
+										WHEEL_DRIVE_BANDWIDTH,
+										WHEEL_DRIVE_FFVEL,
+										WHEEL_DRIVE_KFFAC,
+										WHEEL_DRIVE_KFFDEC
+										);
+		AXE_PARAM(i,POSERR) = WHEEL_DRIVE_TRACKERR;
+
+		if(i==WHEEL_DRIVE_1)
+			i = WHEEL_DRIVE_2;
+		else if(i==WHEEL_DRIVE_2)
+			i= WHEEL_DRIVE_3;
+		else
+			break;
+
+	}
+}
+

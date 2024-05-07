@@ -1,0 +1,152 @@
+/*********************************************************************
+**
+**               CanOpen Operational Mode: Position
+**               ----------------------------------
+*/
+
+//#define DEBUG_CSP
+
+SmState DriveModeCSP
+{
+    SIG_INIT            = DriveModeCSP_Init;
+    SIG_EXIT            = DriveModeCSP_Exit;
+    SIG_IDLE            = DriveModeCSP_Idle;
+}
+/*********************************************************************
+**
+**               DriveModeCSP State Functions
+**               ---------------------------------
+*/
+
+long DriveModeCSP_Init(long id, long signal, long event[], long data[])
+{
+	print("Axis ",id,": Enter state OperationEnabled - CSP");
+	// The type of rempent in a cycle mode must not be jerk limited. Otherwise the motor may stop in
+	// an unfavorable manner when the application is aborted.
+	data[DATA_CSxOldRampType]	= AXE_PARAM(id,RAMPTYPE);
+	AXE_PARAM(id,RAMPTYPE)		= 0;
+
+	// The HWAMP mode must be switched between csp and csv mode. The old value must be restored after exiting.
+	data[DATA_CSxOldHwampMode]	= HWAMP_PARAM(id,HWAMP_MODE);
+	HWAMP_PARAM(id,HWAMP_MODE)	= HWAMP_MODE_POS_CUR;
+
+	DefOrigin(id);
+
+   	// Disable PFG
+    AxisControl(id, USERREFPOS);
+
+
+	 // Drive is in state operation enables and follows the target and setpoint values of the control device
+	 // In the event of a following error, the mode is exited
+
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 1;
+
+    #ifdef DEBUG_CSP
+		RecordIndex(	AXE_PROCESS_INDEX(id,REG_USERREFPOS),
+						AXE_PROCESS_INDEX(id,REG_ACTPOS),
+						AXE_PROCESS_INDEX(id,REG_TRACKERR),
+						AXE_PROCESS_INDEX(id,PFG_AKTSTATE)
+						);
+		RecordDest(DYNMEM);
+		RecordStart(0);
+    #endif
+
+}
+long DriveModeCSP_Exit(long id, long signal, long event[], long data[])
+{
+	print("Axis ",id,": Exit state OperationEnabled - CSP");
+	// The type of rempent in a cycle mode must not be jerk limited. Otherwise the motor may stop in
+	// an unfavorable manner when the application is aborted.
+	AXE_PARAM(id,RAMPTYPE)		= data[DATA_CSxOldRampType];
+
+	// The HWAMP mode must be switched between csp and csv mode. The old value must be restored after exiting.
+	HWAMP_PARAM(id,HWAMP_MODE)	= data[DATA_CSxOldHwampMode];
+
+    // Enable PFG
+    AxisControl(id, ON);
+
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT12] = 0;     // Drive does not follow the target value
+    data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT11] = 0;
+
+    #ifdef DEBUG_CSP
+    	RecordStop(0,0);
+    #endif
+}
+
+long DriveModeCSP_Idle(long id, long signal, long event[], long data[])
+{
+	// Internal max rpm warning, no limit active - not 100% DS402 conform
+	if(ZBCO_MAXVEL(id)<ZBCO_ACTVEL(id))
+		data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT11] = 1;
+	else
+		data[DATA_StatusWord].i[ZBCOS_STW_OP_BIT11] = 0;
+
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //
+    //// definitions for homing
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //
+
+    // defining the origin after homing
+    if(USER_PARAM(99) == 15)
+	{
+		DefOrigin(id);
+		USER_PARAM(99) = 0;
+	}
+	// USER_PARAM(1, 2, 3)
+	// safe shutdown after disconnecting from ros
+	if(Time() - pre_running_time > running_time)
+	{
+		print(Time());
+		pre_running_time = Time();
+		if(USER_PARAM(4) == 15)
+		{
+			if(USER_PARAM(1) == USER_PARAM(2))
+			{
+				USER_PARAM(3) = USER_PARAM(3) + 1;
+				if(USER_PARAM(3) == reset_flag_counter)
+				{
+					/*
+					write script to bring the joints to zero position
+					*/
+					GLB_PARAM(PRGPAR) = -1;
+					DigOutput(1, 1);
+					DigOutput(2, 1);
+					AxisControl(id, ON);
+					AxisPosRelStart(id, 0);   // Relative positioning forward 80000 qc.
+					AxisWaitReached(id);
+					while(AxisMoving(0));
+					DigOutput(1, 0);
+					DigOutput(2, 0);
+					Delay(1000);
+					USER_PARAM(4) = 0;
+					Exit(1);
+					//Sysvar[0x01221102] = 0x01;
+				}
+			}
+			else
+			{
+				USER_PARAM(3) = 0;
+			}
+		}
+		else
+		{
+			USER_PARAM(3) = 0;
+		}
+		USER_PARAM(2) = USER_PARAM(1);
+    }
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //
+    /*
+    ** It is important that we do NOT "handle" the Idle event here.  This allows
+    ** the Idle event to be passed up the superstate chain so that all the normal
+    ** Idle processing gets a chance to run.
+    */
+    return(SmNotHandled);
+}
+
+
+
