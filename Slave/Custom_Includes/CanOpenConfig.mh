@@ -5,8 +5,10 @@
 // These definitions must be made application-specific, depending on the requirements
 // of the application being implemented.
 
-#include "..\..\Include\motor\motor_axis_1.mh"					// Load motor setup function
 #include "..\..\Include\motor\motor_axis_0.mh"					// Load motor setup function
+#include "..\..\Include\motor\motor_axis_1.mh"					// Load motor setup function
+#include "..\..\Include\motor\motor_axis_2.mh"					// Load motor setup function
+#include "..\..\Include\motor\motor_axis_3.mh"					// Load motor setup function
 
 //----------------------------------------------
 // ZBCOS_CNF_CMDCOUNTERS
@@ -121,9 +123,9 @@ long CanOpenSelfTest(long id)
     else if (id == 1)
     	setupaxis0_Inc(id,id,1);
 	else if (id == 2)
-		print("dummy SM - not used");
+		setupaxis2_Inc(id,id,-1);
 	else if (id == 3)
-		print("dummy SM - not used");
+		setupaxis3_Inc(id,id,1);
 
 
 

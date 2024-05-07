@@ -19,7 +19,7 @@ void zbcos_reset_multiaxcommand();
 /*********************************************************************
 ** Miscellaneous defines
 *********************************************************************/
-#define ZBCOS_CNF_MAX_AXES      3       // Axis count (8 is the maximum supported by CanOpen).
+#define ZBCOS_CNF_MAX_AXES      4       // Axis count (8 is the maximum supported by CanOpen).
 
 #define FALSE  0
 #define TRUE   1
