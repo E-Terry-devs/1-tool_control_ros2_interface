@@ -43,7 +43,7 @@
 
 #define	axis1_POSENCREV			1						// Number of revolutions of the motor
 #define	axis1_POSENCQC			axis1_ENCRES		// Number of quadcounts in POSENCREV revolutions
-#define	axis1_POSFACT_Z			42						// Number of revolutions of the input shaft
+#define	axis1_POSFACT_Z			68						// Number of revolutions of the input shaft
 #define	axis1_POSFACT_N			10						// Number of revolutions of the output shaft in POSFACT_Z revolutions of the input shaft
 #define	axis1_FEEDREV			1							// Number of revolutions of the gear box output shaft
 #define	axis1_FEEDDIST			600	// Distance travelled (in user units) in FEEDREV revolutions of the gear box output shaft

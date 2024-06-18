@@ -98,7 +98,6 @@ long DriveModeCSP_Idle(long id, long signal, long event[], long data[])
 	// safe shutdown after disconnecting from ros
 	if(Time() - pre_running_time > running_time)
 	{
-		print(Time());
 		pre_running_time = Time();
 		if(USER_PARAM(4) == 15)
 		{

@@ -46,7 +46,7 @@
 #define	axis0_POSFACT_Z			42						// Number of revolutions of the input shaft
 #define	axis0_POSFACT_N			10						// Number of revolutions of the output shaft in POSFACT_Z revolutions of the input shaft
 #define	axis0_FEEDREV			1							// Number of revolutions of the gear box output shaft
-#define	axis0_FEEDDIST			600	// Distance travelled (in user units) in FEEDREV revolutions of the gear box output shaft
+#define	axis0_FEEDDIST			150	// Distance travelled (in user units) in FEEDREV revolutions of the gear box output shaft
 
 
 long setupaxis0_Inc(long axisNo, long encPort, long direction)

@@ -117,15 +117,13 @@ long CanOpenSelfTest(long id)
     ZBCO_POSITIONOPTCODE(id) = ZBCOS_CNF_POSITION_OPTCODE;
 
     if(id == 0)
-    	setupaxis1_Inc(id,id,-1);
+    	setupaxis0_Inc(id,id,-1);
     else if (id == 1)
-    	setupaxis0_Inc(id,id,1);
-	else if (id == 2)
 		print("dummy SM - not used");
+	else if (id == 2)
+		setupaxis1_Inc(id,id, 1);
 	else if (id == 3)
 		print("dummy SM - not used");
-
-
 
 
     // Self-test and initialization should go here.

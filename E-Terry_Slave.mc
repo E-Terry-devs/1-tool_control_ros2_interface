@@ -761,3 +761,5 @@ long CanOpenError(long id, long event, long data[])
 //$X {User Parameter (2),1,1,0,-1,0,-1,0,(-1),-1},0x2201,2,0
 //$X {User Parameter (4),1,1,0,-1,0,-1,0,(-1),-1},0x2201,4,0
 //$X {User Parameter (3),1,1,0,-1,0,-1,0,(-1),-1},0x2201,3,0
+//$X {Target Pos.,1,1,0,-1,0,-1,0,(-1),-1},0x607A,0,0
+//$X {Target Pos.,1,1,0,-1,0,-1,0,(-1),-1},0x707A,0,0
